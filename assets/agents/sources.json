@@ -1,0 +1,167 @@
+[
+  {
+    "id": "kiro",
+    "page": "https://kiro.dev/",
+    "icon": "https://kiro.dev/favicon.ico"
+  },
+  {
+    "id": "gemini-cli",
+    "page": "https://geminicli.com/",
+    "icon": "https://geminicli.com/favicon.ico"
+  },
+  {
+    "id": "cline",
+    "page": "https://cline.bot/",
+    "icon": "https://cline.bot/assets/branding/favicons/favicon-16x16.png"
+  },
+  {
+    "id": "devin-desktop",
+    "page": "https://devin.ai/",
+    "icon": "https://devin.ai/favicon.svg"
+  },
+  {
+    "id": "opencode",
+    "page": "https://opencode.ai/",
+    "icon": "https://opencode.ai/favicon-96x96-v3.png"
+  },
+  {
+    "id": "windsurf",
+    "page": "https://windsurf.com/",
+    "icon": "https://devin.ai/favicon.svg"
+  },
+  {
+    "id": "qwenwork",
+    "page": "https://qwenwork.ai/",
+    "icon": "https://img.alicdn.com/imgextra/i1/O1CN011LNyUFRWLsI0OAXQ_!!6000000007507-2-tps-192-192.png"
+  },
+  {
+    "id": "roo-code",
+    "page": "https://roocode.com/",
+    "icon": "https://roomote.dev/favicon.ico"
+  },
+  {
+    "id": "auggie",
+    "page": "https://www.augmentcode.com/",
+    "icon": "https://www.augmentcode.com/favicon.svg"
+  },
+  {
+    "id": "openclaw",
+    "page": "https://openclaw.ai/",
+    "icon": "https://openclaw.ai/favicon.svg"
+  },
+  {
+    "id": "nanoclaw",
+    "page": "https://nanoclaw.dev/",
+    "icon": "https://nanoclaw.dev/favicon.svg"
+  },
+  {
+    "id": "cherry-studio",
+    "page": "https://www.cherry-ai.com/",
+    "icon": "https://www.cherryai.com.cn/assets/favicon-BmbgeFTf.png"
+  },
+  {
+    "id": "dify",
+    "page": "https://dify.ai/",
+    "icon": "https://dify.ai/favicon.svg"
+  },
+  {
+    "id": "manus",
+    "page": "https://manus.im/",
+    "icon": "https://manus.im/favicon.ico?favicon.0xxlzaf8ul9ey.ico"
+  },
+  {
+    "id": "coze",
+    "page": "https://www.coze.com/",
+    "icon": "https://sf-coze-web-cdn.coze.com/obj/coze-web-sg/obric/coze/favicon.1970.png"
+  },
+  {
+    "id": "qodo",
+    "page": "https://www.qodo.ai/",
+    "icon": "https://www.qodo.ai/wp-content/uploads/2025/03/qodo-fav-32x32.png"
+  },
+  {
+    "id": "zed",
+    "page": "https://zed.dev/",
+    "icon": "https://zed.dev/favicon_black_16.png"
+  },
+  {
+    "id": "iflow",
+    "page": "https://docs.iflow.cn/",
+    "icon": "https://platform.iflow.cn/img/favicon.ico"
+  },
+  {
+    "id": "droid",
+    "page": "https://docs.factory.ai/",
+    "icon": "https://docs.factory.com/favicon.ico"
+  },
+  {
+    "id": "comate",
+    "page": "https://comate.baidu.com/",
+    "icon": "https://comate.baidu.com/favicon.ico"
+  },
+  {
+    "id": "continue",
+    "page": "https://www.continue.dev/",
+    "icon": "https://continue.dev/favicon.png"
+  },
+  {
+    "id": "workbuddy",
+    "page": "https://www.workbuddy.cn/",
+    "icon": "https://download.codebuddy.cn/web/workbuddy/788eb1c5ba3681efa98cf7b58ae688e293c1bb34/assets/logo.svg"
+  },
+  {
+    "id": "lingma",
+    "page": "https://lingma.aliyun.com/",
+    "icon": "https://img.alicdn.com/imgextra/i1/O1CN01BN6Jtc1lCfJNviV7H_!!6000000004783-2-tps-134-133.png"
+  },
+  {
+    "id": "kimi-claw",
+    "page": "https://www.kimi.com/bot",
+    "icon": "https://www.kimi.com/pwa-192.png"
+  },
+  {
+    "id": "minimax-design",
+    "page": "https://hub.minimaxi.com/",
+    "icon": "https://design.minimax.cn/favicon.png"
+  },
+  {
+    "id": "genspark",
+    "page": "https://wwj.genspark.ai/brand/genspark",
+    "icon": "https://cdn1.genspark.ai/user-upload-image/admin/brand/genspark/logos/icon-square.svg"
+  },
+  {
+    "id": "minimax-agent",
+    "page": "https://agent.minimax.cn/",
+    "icon": "https://agent.minimax.cn/assets/logo/favicon_v2.png?v=7"
+  },
+  {
+    "id": "codearts",
+    "page": "https://agentorchard.huaweicloud.com/index.html",
+    "icon": "https://res-static.hc-cdn.cn/cloudbu-site/china/zh-cn/zhiguoyuan/home/前2楼层/logo-v2/codearts.png"
+  },
+  {
+    "id": "flowise",
+    "page": "https://github.com/FlowiseAI/Flowise",
+    "icon": "https://raw.githubusercontent.com/FlowiseAI/Flowise/main/packages/ui/public/logo192.png"
+  },
+  {
+    "id": "minimax-agent",
+    "source": "User-provided Mavis horse product icon, 2026-09-30",
+    "asset": "assets/agents/mavis-reference.jpg"
+  },
+  {
+    "id": "pi",
+    "page": "https://pi.dev/",
+    "icon": "https://pi.dev/favicon.svg?v=78530701-1e99-414a-ab43-80b36a1cf8f1"
+  },
+  {
+    "id": "command-code",
+    "page": "https://commandcode.ai/",
+    "icon": "https://commandcode.ai/favicon.ico"
+  },
+  {
+    "id": "minimax-code",
+    "page": "https://agent.minimax.io/download",
+    "icon": "https://agent.minimax.io/assets/logo/apple-touch_v2.png?v=5"
+  }
+]

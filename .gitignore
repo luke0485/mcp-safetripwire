@@ -1,0 +1,16 @@
+node_modules/
+.tmp-npm-cache/
+dist/
+.tmp-*.json
+.tmp-*.jsonl
+*.log
+*.tripwire-backup-*
+.mcp-tripwire/
+.tmp-*
+*.key
+*.pem
+*.pfx
+*.p12
+.env
+.env.*
+*.dmp

@@ -1,0 +1,16 @@
+{
+  "//": "Claude Desktop / Cursor / most JSON-config MCP hosts. Replace the real server command with 'mcp-tripwire wrap -- <real command>'; the host is otherwise unchanged. Generate this precisely for your machine with: mcp-tripwire install --host claude-desktop --server <name>",
+  "mcpServers": {
+    "blender": {
+      "command": "/absolute/path/to/node",
+      "args": [
+        "/absolute/path/to/mcp-tripwire/src/cli.js",
+        "wrap",
+        "--name", "blender",
+        "--log", "/absolute/path/to/.mcp-tripwire/audit.jsonl",
+        "--",
+        "uvx", "blender-mcp"
+      ]
+    }
+  }
+}

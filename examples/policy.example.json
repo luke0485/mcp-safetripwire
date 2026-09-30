@@ -1,0 +1,10 @@
+{
+  "mode": "block",
+  "allowedTools": [
+    "read_file",
+    "render_scene"
+  ],
+  "denyTools": [
+    "execute_blender_code"
+  ]
+}

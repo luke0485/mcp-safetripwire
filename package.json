@@ -1,0 +1,34 @@
+{
+  "name": "mcp-tripwire",
+  "version": "0.1.0",
+  "description": "MCP Tripwire - a transparent, LLM-free security broker for the Model Context Protocol: manifest pinning, static poisoning scan, capability policy, and audit logging.",
+  "type": "module",
+  "bin": {
+    "mcp-tripwire": "./src/cli.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "doctor": "node src/cli.js doctor",
+    "scan:demo": "node src/cli.js scan --name demo -- node examples/demo-server.js",
+    "wrap:demo": "node src/cli.js wrap --name demo --log ./.tmp-audit.jsonl -- node examples/demo-server.js"
+  },
+  "files": [
+    "src",
+    "docs",
+    "README.md"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@lobehub/icons-static-svg": "^1.95.1",
+    "esbuild": "^0.28.2",
+    "postject": "^1.0.0-alpha.6",
+    "rcedit": "^5.0.2"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1",
+    "yaml": "^2.9.1"
+  }
+}
