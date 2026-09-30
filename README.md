@@ -116,6 +116,12 @@ MCP Tripwire is a Windows-first, LLM-free security broker for MCP traffic explic
 
 This is a preview, not a sandbox, endpoint firewall or independently audited security product. Bypassed connections and Agent built-in tools are outside its scope. macOS and Linux support are planned for later development; no release date is promised.
 
+## 作者与协作 / Credits
+
+**作者 / Author：lukek0485**
+
+**AI 协作模型 / AI collaborators：DeepSeek V4.1 Flash、GPT6.1sol**
+
 ## 许可证
 
 项目代码采用 [MIT License](LICENSE)。第三方 Agent 名称、商标和图标属于各自权利人，不因本项目的 MIT 许可证转授其商标权；图标来源见 [assets/README.md](assets/README.md)。
