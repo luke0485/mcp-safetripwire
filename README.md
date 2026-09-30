@@ -43,7 +43,7 @@ Agent 能调用工具，也可能遇到被替换的工具清单、可疑的工�
 | 本机与 HTTP MCP | stdio 与支持的 HTTP / SSE 路由共用检查器 |
 | Windows 托盘 | 关闭界面仍在后台运行；从托盘“退出”才结束后台服务 |
 
-Agent 目录包含 **56 个条目（含自定义入口）**，其中 **30 个配置适配器**支持默认位置的配置读取。目录收录、图标适配和配置读取不等于对每个产品做过真实安装与完整兼容性认证。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
+Agent 目录包含 **57 个条目（56 个产品及自定义入口）**，其中 **30 个配置适配器**支持默认位置的配置读取。目录收录、图标适配和配置读取不等于对每个产品做过真实安装与完整兼容性认证。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
 
 ## 快速上手
 
@@ -114,3 +114,4 @@ This is a preview, not a sandbox, endpoint firewall or independently audited sec
 ## 许可证
 
 项目代码采用 [MIT License](LICENSE)。第三方 Agent 名称、商标和图标属于各自权利人，不因本项目的 MIT 许可证转授其商标权；图标来源见 [assets/README.md](assets/README.md)。
+
