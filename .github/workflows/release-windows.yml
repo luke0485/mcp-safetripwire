@@ -1,7 +1,7 @@
 name: Windows release
 on:
   push:
-    tags: ['v*']
+    tags: ['initial', 'v*']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,7 +19,7 @@ jobs:
           node-version: '24'
           cache: npm
       - name: Check tag version
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
           $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
@@ -35,6 +35,7 @@ jobs:
           ./dist/tripwire.exe doctor
           if ($LASTEXITCODE -ne 0) { throw 'Executable smoke test failed.' }
           ./tools/package-release.ps1
+          ./tools/package-source.ps1
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: |
@@ -47,8 +48,17 @@ jobs:
             dist/tripwire.exe
             dist/MCP-Tripwire-windows-x64.zip
             dist/SHA256SUMS.txt
-      - name: Prepare draft release
-        if: startsWith(github.ref, 'refs/tags/')
+            dist/MCP-Tripwire-source.zip
+      - name: Publish initial preview
+        if: github.ref == 'refs/tags/initial'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create initial --verify-tag --title "初版 / Initial preview" --prerelease --notes-file docs/INITIAL-RELEASE.md dist/tripwire.exe dist/MCP-Tripwire-windows-x64.zip dist/MCP-Tripwire-source.zip dist/SHA256SUMS.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Initial release publication failed.' }
+      - name: Prepare later draft release
+        if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}

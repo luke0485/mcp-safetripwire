@@ -1,6 +1,6 @@
 # Security policy / 安全政策
 
-MCP Tripwire 0.1.x is a Windows preview. It has not received an independent security audit. Do not deploy it as your only protection for privileged or sensitive workloads.
+MCP Tripwire is an initial Windows preview. It has not received an independent security audit. Do not deploy it as your only protection for privileged or sensitive workloads.
 
 ## Threat model
 

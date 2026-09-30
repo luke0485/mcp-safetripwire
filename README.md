@@ -13,6 +13,8 @@ An inspectable security broker between your Agent and its MCP tools.
 ![No LLM](https://img.shields.io/badge/Detection-No_LLM_required-555555)
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)
+
+[**下载 Windows 初版**](https://github.com/luke0485/mcp-tripwire/releases/tag/initial) · [查看构建状态](https://github.com/luke0485/mcp-tripwire/actions)
 </div>
 
 ![Agent → Tripwire → MCP](assets/readme/flow.svg)
@@ -92,7 +94,7 @@ node src/cli.js console
 ./tools/package-release.ps1
 ```
 
-推送与 `package.json` 版本匹配的 `v*` 标签后，Windows 发布工作流会测试、构建、生成校验摘要和构建证明，并准备草稿 Release。维护者确认产物后再发布。详见 [发布说明](docs/RELEASING.md)。
+当前以“初版 / Initial preview”发布。推送 `initial` 标签后，Windows 发布工作流会测试、构建、生成校验摘要和构建证明，通过后发布预览发行包。后续发布流程见 [发布说明](docs/RELEASING.md)。
 
 ## 路线图
 
