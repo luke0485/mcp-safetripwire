@@ -51,7 +51,9 @@
 |iFlow / 心流|iFlow CLI|~\.iflow\settings.json|离线产品图标|
 |Baidu / 百度|Comate|~\.comate\mcp.json|离线产品图标|
 |Huawei / 华为|CodeArts Agent|指定配置 / 手动接入|离线产品图标|
-|Nous Research|Hermes Agent|指定配置 / 手动接入|离线产品图标|
+|Nous Research|Hermes Agent|~\.hermes\config.yaml（mcp_servers）|离线产品图标|
+|Pi|Pi Agent|~\.pi\agent\mcp.json|离线产品图标|
+|Command Code|Command Code|~\.commandcode\mcp.json|离线产品图标|
 |Alibaba|通义灵码 / Lingma|指定配置 / 手动接入|离线产品图标|
 |Tencent|WorkBuddy|指定配置 / 手动接入|离线产品图标|
 |Moonshot AI|Kimi Claw|指定配置 / 手动接入|离线产品图标|
