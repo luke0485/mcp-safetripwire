@@ -1,5 +1,8 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/luke0485/mcp-tripwire/main/assets/logo-256.png" width="128" height="128" alt="MCP Tripwire Logo" />
+</p>
+
 <div align="center">
-<img src="assets/logo-256.png" width="88" alt="MCP Tripwire" />
 
 # MCP Tripwire
 
