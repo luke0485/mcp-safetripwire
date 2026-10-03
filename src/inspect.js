@@ -36,7 +36,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
     // Client -> server. Returns { forward, error? }.
     onClientMessage(msg) {
       if (!msg || typeof msg !== 'object' || Array.isArray(msg) ||
-          (msg.method === 'tools/call' && (typeof msg.params?.name !== 'string' || !msg.params.name ||
+          (msg.method === 'tools/call' && (msg.id === undefined || msg.id === null || typeof msg.params?.name !== 'string' || !msg.params.name ||
             (msg.params.arguments !== undefined && (!msg.params.arguments || typeof msg.params.arguments !== 'object' || Array.isArray(msg.params.arguments)))))) {
         return { forward: false, error: { jsonrpc: '2.0', id: msg?.id ?? null, error: { code: -32600, message: 'Invalid JSON-RPC tool request' } } };
       }

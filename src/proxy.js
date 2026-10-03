@@ -131,7 +131,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
       }
       writeUpstream(msg);
     },
-    { onError: (err) => log('warn', 'host-parse-error', { name, error: String(err) }) },
+    { onError: () => log('warn', 'host-parse-error', { name, error: 'Malformed or oversized JSON-RPC message' }) },
   );
 
   const toHost = createLineDecoder(
@@ -145,7 +145,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
       safeServer(msg, method);
       writeDownstream(msg);
     },
-    { onError: (err) => log('warn', 'server-parse-error', { name, error: String(err) }) },
+    { onError: () => log('warn', 'server-parse-error', { name, error: 'Malformed or oversized JSON-RPC message' }) },
   );
 
   process.stdin.setEncoding('utf8');

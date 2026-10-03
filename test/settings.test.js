@@ -22,6 +22,7 @@ test('settings round-trip through disk', () => {
     assert.equal(loadSettings(p).protection, 'observe');
   } finally {
     rmSync(p, { force: true });
+    rmSync(p + '.key', { force: true });
   }
 });
 

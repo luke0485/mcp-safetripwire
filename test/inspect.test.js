@@ -147,3 +147,11 @@ test('malformed, duplicate and incomplete manifests cannot grant trust', () => {
     assert.equal(ins.onClientMessage(call('safe')).forward, false);
   }
 });
+
+test('tool calls require a request ID and cannot execute as notifications', () => {
+  for (const id of [undefined, null]) {
+    const request = call('safe');
+    if (id === undefined) delete request.id; else request.id = id;
+    assert.equal(inspector().onClientMessage(request).forward, false);
+  }
+});
