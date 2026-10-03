@@ -6,9 +6,9 @@ MCP Tripwire is an initial Windows preview. It has not received an independent s
 
 The broker checks MCP traffic explicitly routed through it. It can reject unapproved or changed tool manifests and matching payload, blacklist and frozen behaviour rules in blocking mode. It does not control Agent built-in tools, direct network connections, operating-system access or traffic that bypasses the broker.
 
-Rule and route HMAC keys reside in the same user account as their data. They detect modification when the key remains trustworthy; they are not protection against an attacker controlling that account. Manifest pins and global mode settings do not currently have equivalent authenticated storage. Audit hash chains detect inconsistencies, not wholesale replacement by someone with write access. Local administrators are outside the protection boundary.
+Rule and route HMAC keys reside in the same user account as their data. They detect modification when the key remains trustworthy; they are not protection against an attacker controlling that account. Manifest pins and global mode settings now use authenticated storage. Legacy unsigned files are accepted until their next deliberate save; sealed files reject edits and signature removal. Corrupt mode settings enable protection rules rather than silently enabling observation. Audit hash chains detect inconsistencies, not wholesale replacement by someone with write access. Local administrators are outside the protection boundary.
 
-HTTP request bodies and buffered JSON replies are limited to 8 MiB. SSE streams, connection/session counts and child-process resources still need further resource hardening. Remote MCP authentication compatibility, including OAuth and mTLS, requires additional client-specific validation.
+HTTP request bodies and buffered JSON replies are limited to 8 MiB. SSE events are limited to 8 MiB, session records to 128 and outstanding requests per session to 256. Idle records are reclaimed. Concurrent connections within a session and child-process resources still need further hardening. Remote MCP authentication compatibility, including OAuth and mTLS, requires additional client-specific validation.
 
 ## Reporting a vulnerability
 

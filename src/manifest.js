@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { readProtectedJson, writeProtectedJson } from './integritystore.js';
+import { acquireLogLock } from './log.js';
 
 // Manifest pinning is the one mechanism here that stops a whole attack class
 // (rug pull) with near-zero false positives: we hash the server's declared
@@ -25,25 +27,39 @@ export function hashTools(tools) {
 }
 
 export function loadState(path) {
-  if (!path || !existsSync(path)) return { pins: {}, pending: {} };
   try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'));
+    const parsed = readProtectedJson(path, { pins: {}, pending: {} });
+    if (!parsed.pins || !parsed.pending || typeof parsed.pins !== 'object' || typeof parsed.pending !== 'object' || Array.isArray(parsed.pins) || Array.isArray(parsed.pending)) throw new Error('Invalid manifest state');
     return { pins: parsed.pins ?? {}, pending: parsed.pending ?? {} };
   } catch {
-    return { pins: {}, pending: {} };
+    return { pins: {}, pending: {}, integrityError: 'Manifest state was rejected; restore a trusted backup' };
   }
 }
 
 export function saveState(path, state) {
+  if (state.integrityError) throw new Error(state.integrityError);
+  writeProtectedJson(path, { pins: state.pins ?? {}, pending: state.pending ?? {} });
+}
+
+export function updateState(path, mutate) {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify(state, null, 2));
+  const release = acquireLogLock(path);
+  try {
+    const state = loadState(path);
+    if (state.integrityError) throw new Error(state.integrityError);
+    const result = mutate(state);
+    if (result !== false) saveState(path, state);
+    return result;
+  } finally { release(); }
 }
 
 export function findPin(state, name) {
+  if (state.integrityError) return { integrityError: state.integrityError };
   return state.pins?.[name] ?? {};
 }
 
 export function setPin(state, name, hash) {
+  if (typeof name !== 'string' || !name || name === '__proto__' || name === 'constructor' || name === 'prototype') throw new Error('Invalid channel name');
   state.pins = state.pins ?? {};
   state.pins[name] = { hash, approvedAt: new Date().toISOString() };
   if (state.pending) delete state.pending[name];
@@ -53,6 +69,7 @@ export function setPin(state, name, hash) {
 // channel that has not been approved yet, so a human can approve exactly what
 // is on the wire instead of re-running the server somewhere else.
 export function setPending(state, name, hash, count) {
+  if (typeof name !== 'string' || !name || name === '__proto__' || name === 'constructor' || name === 'prototype') throw new Error('Invalid channel name');
   state.pending = state.pending ?? {};
   const prev = state.pending[name];
   if (prev && prev.hash === hash) return false;

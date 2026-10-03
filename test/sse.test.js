@@ -63,3 +63,8 @@ test('isJsonRpc recognises requests, responses and notifications', () => {
   assert.equal(isJsonRpc({ hello: 'world' }), false);
   assert.equal(isJsonRpc(null), false);
 });
+
+test('JSON-RPC envelope rejects ambiguous messages and invalid IDs', () => {
+  for (const message of [{ jsonrpc: '2.0' }, { method: 'ping' }, { jsonrpc: '2.0', method: 1 }, { jsonrpc: '2.0', method: 'ping', id: {} }, { jsonrpc: '2.0', method: 'ping', result: {} }, { jsonrpc: '2.0', id: 1, result: {}, error: { code: 1, message: 'bad' } }, { jsonrpc: '2.0', id: 1, error: 'bad' }]) assert.equal(isJsonRpc(message), false);
+  assert.equal(isJsonRpc({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'bad' } }), true);
+});

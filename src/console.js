@@ -6,7 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { platform, release } from 'node:os';
 import { appRoot, cliLauncher } from './selfpath.js';
 import { defaultStatePath, defaultLogPath, dataDir } from './paths.js';
-import { loadState, findPin, promotePending, saveState } from './manifest.js';
+import { loadState, findPin, promotePending, updateState } from './manifest.js';
 import { loadRoutes, saveRoutes, defaultRoutesPath } from './routes.js';
 import { knownHosts, listServers, readServer, planWrap, enumerateServers, detectAgent, registerAgentConfig } from './hosts.js';
 import { runDiscovery, snapshotServers, unprotectedServers, isProtectedServer } from './discover.js';
@@ -148,6 +148,7 @@ function buildStatus() {
   });
   return {
     protection: settings.protection,
+    integrityErrors: [settings.integrityError, state.integrityError, routes.integrityError].filter(Boolean),
     platform: `${platform()} ${release()}`,
     dataDir: dataDir(),
     logPath: defaultLogPath(),
@@ -209,6 +210,7 @@ function buildStatus() {
         })(),
         pending: Object.entries(loadState(defaultStatePath()).pending ?? {}).map(([name, p]) => ({
           name,
+          hash: p.hash,
           count: p.count ?? null,
           seenAt: p.seenAt ?? null,
         })),
@@ -663,9 +665,9 @@ function handleApi(req, res, url) {
   if (req.method === 'POST' && url.pathname === '/api/approve') {
     return readJsonBody(req).then((body) => {
       if (body.confirm !== true) return sendJson(res, 400, { error: 'confirmation required' });
-      const state = loadState(defaultStatePath());
-      if (!promotePending(state, body.name)) return sendJson(res, 400, { error: 'no pending surface to approve' });
-      saveState(defaultStatePath(), state);
+      if (typeof body.hash !== 'string' || !/^[a-f0-9]{64}$/.test(body.hash) || !updateState(defaultStatePath(), state => promotePending(state, body.name, body.hash))) {
+        return sendJson(res, 409, { error: '工具清单已变化，请刷新后重新核对 / Tool manifest changed; refresh and review again' });
+      }
       log('info', 'channel-approved', { name: body.name });
       return sendJson(res, 200, { ok: true, name: body.name });
     }).catch((err) => sendJson(res, 400, { error: err.message }));

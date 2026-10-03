@@ -82,7 +82,9 @@ test('a call carrying the planted secret is blocked', () => {
 });
 
 test('a normal call on a reviewed channel still passes', () => {
-  const ins = inspectorWith('block');
+  const tools = [{ name: 'read_file' }];
+  const ins = inspectorWith('block', hashTools(tools).hash);
+  ins.onServerMessage({ jsonrpc: '2.0', id: 1, result: { tools } }, 'tools/list');
   const v = ins.onClientMessage({ jsonrpc: '2.0', id: 7, method: 'tools/call', params: { name: 'read_file', path: '/tmp/x' } });
   assert.equal(v.forward, true);
 });

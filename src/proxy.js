@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { encode, createLineDecoder } from './rpc.js';
 import { log } from './log.js';
 import { killTree } from './kill.js';
+import { isJsonRpc } from './sse.js';
 
 // The transparent stdio proxy: the heart of host-agnostic interception.
 //
@@ -104,7 +105,15 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
 
   const toChild = createLineDecoder(
     (msg) => {
+      if (!isJsonRpc(msg)) {
+        writeDownstream({ jsonrpc: '2.0', id: null, error: { code: -32600, message: 'Invalid JSON-RPC message' } });
+        return;
+      }
       const isRequest = Boolean(msg) && msg.id !== undefined && typeof msg.method === 'string';
+      if (isRequest && (pending.has(JSON.stringify(msg.id)) || pending.size >= 256)) {
+        writeDownstream({ jsonrpc: '2.0', id: msg.id, error: { code: -32010, message: 'Duplicate or excessive pending request' } });
+        return;
+      }
       if (isRequest) pending.set(JSON.stringify(msg.id), msg.method);
 
       const { verdict } = safeClient(msg);
@@ -122,11 +131,12 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
       }
       writeUpstream(msg);
     },
-    { onError: (err, line) => log('warn', 'host-parse-error', { name, error: String(err), sample: line.slice(0, 200) }) },
+    { onError: (err) => log('warn', 'host-parse-error', { name, error: String(err) }) },
   );
 
   const toHost = createLineDecoder(
     (msg) => {
+      if (!isJsonRpc(msg)) { log('warn', 'server-parse-error', { name, error: 'Invalid JSON-RPC message' }); return; }
       let method;
       if (msg && msg.id !== undefined) {
         method = pending.get(JSON.stringify(msg.id));
@@ -135,7 +145,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
       safeServer(msg, method);
       writeDownstream(msg);
     },
-    { onError: (err, line) => log('warn', 'server-parse-error', { name, error: String(err), sample: line.slice(0, 200) }) },
+    { onError: (err) => log('warn', 'server-parse-error', { name, error: String(err) }) },
   );
 
   process.stdin.setEncoding('utf8');

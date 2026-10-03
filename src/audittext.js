@@ -1,6 +1,7 @@
 // Product explanations, displayed beside the event name in parentheses.
 // Keep the raw event and structured details available for technical review.
 export const AUDIT_TEXT = {
+  'manifest-state-rejected': ['工具清单记录异常', '校验未通过，已拒绝请求，请恢复可信备份', 'Manifest storage rejected', 'Validation failed; the request was refused. Restore a trusted backup'],
   'advanced-blocked': ['已阻断请求', '命中黑名单或已确认基线规则', 'Request blocked', 'Matched a blacklist or confirmed baseline rule'],
   'advanced-notice': ['请求需核对', '发现规则命中，当前只记录', 'Request needs review', 'A rule matched; the request was only recorded'],
   'advanced-settings-saved': ['进阶防护已保存', '黑名单和基线规则已更新', 'Advanced protection saved', 'Blacklist and baseline rules updated'],

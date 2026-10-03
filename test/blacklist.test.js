@@ -66,3 +66,11 @@ test('tool descriptions are scanned for the same payload shapes', () => {
   assert.ok(findings.some((f) => f.rule === 'cloud-metadata-endpoint'));
   assert.equal(findings.find((f) => f.rule === 'cloud-metadata-endpoint').severity, 'critical');
 });
+
+test('known patched searxng releases are not flagged by a historical advisory', () => {
+  assert.equal(matchPackage('mcp-searxng@1.2.1'), null);
+  assert.equal(matchPackage('mcp-searxng@2.0.0'), null);
+  assert.ok(matchPackage('mcp-searxng@1.2.0'));
+  assert.ok(matchPackage('mcp-searxng@latest'));
+  assert.equal(matchPackage('mcp').severity, 'info');
+});

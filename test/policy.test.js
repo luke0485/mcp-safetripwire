@@ -12,7 +12,7 @@ function policyFile(obj) {
 }
 
 test('missing policy defaults to warn (allow everything)', () => {
-  const policy = loadPolicy(join(tmpdir(), 'no-such-tripwire-policy.json'));
+  const policy = loadPolicy();
   assert.equal(policy.mode, 'warn');
   assert.equal(decide(policy, 'anything').action, 'allow');
 });
@@ -80,11 +80,11 @@ test('denyTools still wins over a reviewed channel', () => {
   }
 });
 
-test('corrupt policy file degrades to warn instead of throwing', () => {
+test('corrupt policy file fails closed instead of throwing', () => {
   const path = join(tmpdir(), `tripwire-bad-${process.pid}-${Date.now()}.json`);
   writeFileSync(path, '{ not json');
   try {
-    assert.equal(loadPolicy(path).mode, 'warn');
+    assert.equal(decide(loadPolicy(path), 'read_file').action, 'block');
   } finally {
     rmSync(path, { force: true });
   }

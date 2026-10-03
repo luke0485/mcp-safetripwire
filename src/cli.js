@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { platform, release } from 'node:os';
 import { runBroker } from './broker.js';
 import { captureTools } from './capture.js';
-import { hashTools, loadState, saveState, setPin, findPin } from './manifest.js';
+import { hashTools, loadState, updateState, setPin, findPin } from './manifest.js';
 import { scanManifest } from './scan.js';
 import { classifyTools } from './risk.js';
 import { createHttpProxy } from './httpproxy.js';
@@ -273,9 +273,7 @@ switch (command) {
     try {
       const { tools } = await captureTools({ command: rest[0], args: rest.slice(1) });
       const { hash, count } = hashTools(tools);
-      const state = loadState(statePath);
-      setPin(state, name, hash);
-      saveState(statePath, state);
+      updateState(statePath, state => setPin(state, name, hash));
       process.stdout.write(`pinned "${name}" -> ${hash} (${count} tools)\nstate: ${statePath}\n`);
       process.exit(0);
     } catch (err) {

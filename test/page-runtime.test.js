@@ -85,7 +85,7 @@ function run(env) {
   const fn = new Function(
     'document', 'window', 'localStorage', 'fetch', 'AbortController',
     'navigator', 'setTimeout', 'setInterval', 'clearTimeout', 'alert', 'confirm',
-    script + '\nreturn { topologyHtml, chartHtml, tabs };',
+    script + '\nreturn { topologyHtml, chartHtml, pendingHtml, tabs };',
   );
   return fn(
     env.document, env.window, env.localStorage, env.fetch, env.AbortController,
@@ -181,4 +181,17 @@ test('Agent picker filters products by vendor and detects without writing config
   assert.ok(requests.every(r => !r.method || r.method === 'GET'));
   env.window.closeAgentPicker();
   assert.equal(env.document.getElementById('agent-picker').open, false);
+});
+
+test('approval handlers treat hostile channel names as data and carry the reviewed hash', () => {
+  const ui = run(makeEnv());
+  const name = '\");globalThis.__tripwireInjected=true;//<img src=x>';
+  const hash = 'a'.repeat(64);
+  const html = ui.pendingHtml({ tools: { pending: [{ name, hash, count: 1 }] } });
+  const encoded = html.match(/onclick="([^"]+)"/)[1];
+  const handler = encoded.replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  let received;
+  new Function('doApprove', handler)((...args) => { received = args; });
+  assert.deepEqual(received, [name, hash]);
+  assert.equal(globalThis.__tripwireInjected, undefined);
 });

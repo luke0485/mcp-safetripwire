@@ -18,7 +18,9 @@ const SENSITIVE_METHODS = new Set(['resources/read', 'prompts/get', 'sampling/cr
 function shortParams(params) {
   if (!params || typeof params !== 'object') return undefined;
   const out = {};
-  for (const key of ['name', 'uri', 'prompt', 'server']) if (params[key] !== undefined) out[key] = params[key];
+  for (const key of ['name', 'server']) if (typeof params[key] === 'string') out[key] = params[key].slice(0, 256);
+  if (params.uri !== undefined) out.hasUri = true;
+  if (params.prompt !== undefined) out.hasPrompt = true;
   return Object.keys(out).length ? out : undefined;
 }
 
@@ -26,12 +28,18 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
   // Deception is on by default in protect mode: if you asked for active defence,
   // you get traps. An explicit policy value overrides either way.
   let observedTools = null;
+  let invalidManifest = false;
   const currentPosture = () => getPosture?.() ?? posture;
   const deceptionEnabled = (mode) => policy.deception == null ? mode === 'block' : policy.deception === true;
 
   return {
     // Client -> server. Returns { forward, error? }.
     onClientMessage(msg) {
+      if (!msg || typeof msg !== 'object' || Array.isArray(msg) ||
+          (msg.method === 'tools/call' && (typeof msg.params?.name !== 'string' || !msg.params.name ||
+            (msg.params.arguments !== undefined && (!msg.params.arguments || typeof msg.params.arguments !== 'object' || Array.isArray(msg.params.arguments)))))) {
+        return { forward: false, error: { jsonrpc: '2.0', id: msg?.id ?? null, error: { code: -32600, message: 'Invalid JSON-RPC tool request' } } };
+      }
       const posture = currentPosture();
       const deceptionOn = deceptionEnabled(posture);
       if (msg?.method) {
@@ -42,6 +50,10 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
         }
       }
       if (msg?.method === 'tools/call') {
+        if (getPin().integrityError) {
+          log('warn', 'manifest-state-rejected', { name, transport });
+          return { forward: false, error: { jsonrpc: '2.0', id: msg.id ?? null, error: { code: -32008, message: 'mcp-tripwire: manifest storage integrity check failed' } } };
+        }
         const toolName = msg.params?.name;
         const hit = advancedDecision(getAdvanced(), name, toolName, msg.params);
         if (hit) {
@@ -106,6 +118,15 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
         // Reviewed == a surface was approved and pinned for this channel.
         const reviewed = Boolean(getPin().hash);
         let { action, reason } = decide(posture === 'block' ? { ...policy, mode: 'block' } : policy, toolName, { reviewed });
+        if (posture === 'block' && reviewed && !observedTools) {
+          action = 'block'; reason = 'manifest-not-verified';
+        }
+        if (posture !== 'warn' && invalidManifest) {
+          action = 'block'; reason = 'invalid-manifest';
+        }
+        if (posture !== 'warn' && observedTools && !observedTools.some(tool => tool.name === toolName)) {
+          action = 'block'; reason = 'tool-not-declared';
+        }
         // Re-evaluate the observed surface against the current pin and mode.
         // A cached tool name must not bypass a rejected or stripped list.
         if (observedTools && posture !== 'warn') {
@@ -154,9 +175,30 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
         log('debug', 'response', { name, transport, method });
         return;
       }
-      if (!Array.isArray(msg.result?.tools)) return;
+      if (msg.error) return;
+      const tools = msg.result?.tools;
+      const names = new Set();
+      const malformed = !Array.isArray(tools) || tools.some(tool => {
+        if (!tool || typeof tool.name !== 'string' || !tool.name || names.has(tool.name)
+          || (tool.description !== undefined && typeof tool.description !== 'string')
+          || (tool.inputSchema !== undefined && (!tool.inputSchema || typeof tool.inputSchema !== 'object' || Array.isArray(tool.inputSchema)))) return true;
+        names.add(tool.name); return false;
+      });
+      invalidManifest = malformed || msg.result.nextCursor !== undefined;
+      if (invalidManifest) {
+        observedTools = null;
+        delete msg.result;
+        msg.error = { code: -32009, message: 'mcp-tripwire: invalid or paginated tool manifest; complete review is required' };
+        return;
+      }
 
       const pin = getPin();
+      if (pin.integrityError) {
+        delete msg.result;
+        msg.error = { code: -32008, message: 'mcp-tripwire: manifest storage integrity check failed' };
+        log('warn', 'manifest-state-rejected', { name, transport });
+        return;
+      }
       const declared = msg.result.tools;
       observedTools = structuredClone(declared);
       const ev = evaluateToolsList(declared, { pinHash: pin.hash, posture });

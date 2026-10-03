@@ -433,7 +433,8 @@ function statsHtml(s) {
     chip('protected', prot, t('statsProtected')) +
     chip('unprotected', tk.unprotected, t('statsUnprotected'), tk.unprotected > 0 ? 'num-warn' : '') +
     chip('alerts', tk.alerts24h, t('statsAlerts'), tk.alerts24h > 0 ? 'num-bad' : '') +
-    '</div><div class="mode-summary muted">' + esc(modeSummary(s)) + '</div></div>';
+    '</div><div class="mode-summary muted">' + esc(modeSummary(s)) + '</div>' +
+    (s.integrityErrors && s.integrityErrors.length ? '<p class="num-bad" role="alert">' + (LANG === 'zh' ? '配置校验失败，已拒绝受影响的配置。请恢复可信备份；不要直接覆盖异常文件。' : 'Configuration validation failed. Affected configuration was rejected. Restore a trusted backup; do not overwrite the rejected file.') + '</p>' : '') + '</div>';
 }
 
 function pendingHtml(s) {
@@ -444,7 +445,7 @@ function pendingHtml(s) {
     rows += '<tr><td>' + esc(p.name) + '</td>' +
       '<td class="muted">' + esc(String(p.count === null || p.count === undefined ? '' : p.count)) + '</td>' +
       '<td class="muted">' + esc(String(p.seenAt || '').slice(11, 19)) + '</td>' +
-      '<td><button class="btn-sm" onclick="doApprove(\\'' + esc(p.name) + '\\')">' + esc(t('approve')) + '</button></td></tr>';
+      '<td><button class="btn-sm" onclick="doApprove(' + esc(JSON.stringify(p.name)) + ',' + esc(JSON.stringify(p.hash)) + ')">' + esc(t('approve')) + '</button></td></tr>';
   }
   return '<div class="card"><div class="big">' + esc(t('pendingTitle')) + '</div>' +
     '<p class="muted">' + esc(t('pendingHint')) + '</p>' +
@@ -452,9 +453,9 @@ function pendingHtml(s) {
     rows + '</table></div>';
 }
 
-window.doApprove = async (name) => {
+window.doApprove = async (name, hash) => {
   if (!confirm(t('confirmApprove').replace('{0}', name))) return;
-  const r = await api('/api/approve', { method: 'POST', body: JSON.stringify({ name, confirm: true }) });
+  const r = await api('/api/approve', { method: 'POST', body: JSON.stringify({ name, hash, confirm: true }) });
   alert(r.ok ? t('approveDone') : (t('wrapFail') + (r.error || t('unknown'))));
   if (r.ok) render();
 };
@@ -705,7 +706,7 @@ tabs.tools = async () => {
        <td>\${sv.wrapped ? '<span class="tag calm">' + esc(t('protected')) + '</span>' : '<span class="tag">' + esc(t('unprotected')) + '</span>'}</td>
        <td>\${sv.wrapped ? '' : \`<button class="btn-sm" onclick="doWrap(\${esc(JSON.stringify(h.id))},\${esc(JSON.stringify(sv.name))})">\${esc(t('enableProtection'))}</button>\`}</td></tr>\`).join('')}
      </table>\` : '<p class="muted">' + esc(t('noTools')) + '</p>'}
-   <div class="btns"><button onclick="doRestore('\${esc(h.id)}')">\${esc(t('restoreMine'))}</button></div>
+   <div class="btns"><button onclick="doRestore(\${esc(JSON.stringify(h.id))})">\${esc(t('restoreMine'))}</button></div>
  </div>\`).join('');
 };
 

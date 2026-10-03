@@ -1,5 +1,5 @@
 import { createProxy } from './proxy.js';
-import { loadState, findPin, setPending, saveState } from './manifest.js';
+import { loadState, findPin, setPending, updateState } from './manifest.js';
 import { createInspector } from './inspect.js';
 import { loadPolicy } from './policy.js';
 import { log, setLogFile, setMinConsoleLevel } from './log.js';
@@ -25,15 +25,14 @@ export function runBroker({ name, command, args, statePath, policyPath, logPath,
   const getPin = () => findPin(loadState(statePath), name);
 
   const recordPending = (hash, count) => {
-    const state = loadState(statePath);
-    if (setPending(state, name, hash, count)) saveState(statePath, state);
+    updateState(statePath, state => setPending(state, name, hash, count));
   };
   const inspector = createInspector({ name, getPin, policy, posture, getPosture, getAdvanced, transport: 'stdio', recordPending });
   log('info', 'tripwire-start', {
     name,
     transport: 'stdio',
     command,
-    args,
+    argCount: args?.length ?? 0,
     enforce: posture,
     policyMode: policy.mode,
     pinned: Boolean(getPin().hash),

@@ -21,13 +21,24 @@ function findEventSeparator(buffer) {
   return candidates[0];
 }
 
-export function createSseParser(onEvent, { onError } = {}) {
+export const MAX_SSE_EVENT_BYTES = 8 * 1024 * 1024;
+
+export function createSseParser(onEvent, { onError, maxEventBytes = MAX_SSE_EVENT_BYTES } = {}) {
   let buffer = '';
+  let stopped = false;
   const decoder = new StringDecoder('utf8');
   return function push(chunk) {
+    if (stopped) return;
     buffer += Buffer.isBuffer(chunk) ? decoder.write(chunk) : String(chunk);
     for (;;) {
       const sep = findEventSeparator(buffer);
+      if (Buffer.byteLength(sep ? buffer.slice(0, sep.index) : buffer, 'utf8') > maxEventBytes) {
+        stopped = true;
+        buffer = '';
+        const err = new Error('SSE event exceeds size limit');
+        if (onError) onError(err); else throw err;
+        return;
+      }
       if (!sep) break;
       const block = buffer.slice(0, sep.index);
       buffer = buffer.slice(sep.index + sep.length);
@@ -81,5 +92,14 @@ export function tryParseJsonRpc(data) {
 }
 
 export function isJsonRpc(msg) {
-  return Boolean(msg) && typeof msg === 'object' && (msg.jsonrpc === '2.0' || msg.method !== undefined || msg.result !== undefined || msg.error !== undefined);
+  if (!msg || typeof msg !== 'object' || Array.isArray(msg) || msg.jsonrpc !== '2.0') return false;
+  if (msg.id !== undefined && msg.id !== null && typeof msg.id !== 'string' && !(typeof msg.id === 'number' && Number.isFinite(msg.id))) return false;
+  if (msg.method !== undefined) {
+    return typeof msg.method === 'string' && Boolean(msg.method)
+      && msg.result === undefined && msg.error === undefined
+      && (msg.params === undefined || (msg.params !== null && typeof msg.params === 'object'));
+  }
+  if (msg.id === undefined || (msg.result === undefined) === (msg.error === undefined)) return false;
+  return msg.error === undefined || (msg.error !== null && typeof msg.error === 'object'
+    && Number.isInteger(msg.error.code) && typeof msg.error.message === 'string');
 }

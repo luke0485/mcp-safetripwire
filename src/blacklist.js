@@ -17,7 +17,8 @@ export const BAD_PACKAGES = [
   },
   {
     name: 'mcp-searxng',
-    severity: 'high',
+    severity: 'medium',
+    fixedIn: '1.2.1',
     reason: 'SSRF via unvalidated URL, can reach loopback / intranet / cloud metadata (CVE-2026-54688)',
   },
   {
@@ -26,7 +27,7 @@ export const BAD_PACKAGES = [
     reason: 'credential-bearing calls and headers written to logs; SSRF in multi-tenant HTTP mode (CVE-2026-42282, CVE-2026-39974)',
   },
   {
-    name: 'obat',
+    name: 'obot',
     severity: 'high',
     reason: 'remote MCP registration SSRF to the cloud metadata endpoint (CVE-2026-101064)',
   },
@@ -93,9 +94,18 @@ export function matchPackage(spec) {
   const name = normaliseSpec(spec);
   if (name === '') return null;
   const hit = BAD_PACKAGES.find((p) => p.name.toLowerCase() === name);
+  if (hit?.fixedIn) {
+    const version = String(spec).match(/@(\d+)\.(\d+)\.(\d+)$/);
+    if (version) {
+      const actual = version.slice(1).map(Number);
+      const fixed = hit.fixedIn.split('.').map(Number);
+      const different = actual.findIndex((part, index) => part !== fixed[index]);
+      if (different === -1 || actual[different] > fixed[different]) return null;
+    }
+  }
   if (hit) return { rule: 'blacklisted-package', severity: hit.severity, detail: `${hit.name}: ${hit.reason}` };
   const sdk = BAD_SDK_RANGES.find((s) => s.name.toLowerCase() === name);
-  if (sdk) return { rule: 'vulnerable-sdk', severity: sdk.severity, detail: `${sdk.name} (${sdk.ecosystem}) fixed in ${sdk.fixedIn}: ${sdk.reason}` };
+  if (sdk) return { rule: 'vulnerable-sdk', severity: 'info', detail: `${sdk.name}: ecosystem and installed version are unknown; review SDK advisories before treating this as a vulnerable installation` };
   return null;
 }
 

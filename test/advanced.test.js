@@ -5,6 +5,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {emptyAdvanced,saveAdvanced,loadAdvanced,advancedDecision} from '../src/advanced.js';
 import {createInspector} from '../src/inspect.js';
+import {hashTools} from '../src/manifest.js';
 
 test('signed protection settings reject mutation and deletion, without replacing rejected evidence',t=>{
  const dir=mkdtempSync(join(tmpdir(),'tripwire-advanced-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));const path=join(dir,'config.json');
@@ -30,7 +31,9 @@ test('frozen baseline only enforces mature samples and requested checks',()=>{
 });
 for(const transport of ['stdio','http']) test(transport+' applies live blacklist before forwarding, while observation stays advisory',()=>{
  let current=emptyAdvanced();let mode='warn';
- const inspect=createInspector({name:'c',getPin:()=>({hash:'approved'}),policy:{},getPosture:()=>mode,getAdvanced:()=>current,transport});
+ const tools=[{name:'fetch'}];
+ const inspect=createInspector({name:'c',getPin:()=>({hash:hashTools(tools).hash}),policy:{},getPosture:()=>mode,getAdvanced:()=>current,transport});
+ inspect.onServerMessage({jsonrpc:'2.0',id:1,result:{tools}},'tools/list');
  const msg={jsonrpc:'2.0',id:7,method:'tools/call',params:{name:'fetch',arguments:{url:'https://example.com'}}};
  current={...current,blockedTools:['fetch']};assert.equal(inspect.onClientMessage(msg).forward,true);
  mode='block';const denied=inspect.onClientMessage(msg);assert.equal(denied.forward,false);assert.equal(denied.error.id,7);

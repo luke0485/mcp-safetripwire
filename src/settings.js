@@ -1,6 +1,6 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { dataDir } from './paths.js';
+import { readProtectedJson, writeProtectedJson } from './integritystore.js';
 
 // One plain-language switch for the whole product.
 //
@@ -16,19 +16,20 @@ export function defaultSettingsPath() {
 }
 
 export function loadSettings(path = defaultSettingsPath()) {
-  if (!existsSync(path)) return { protection: 'observe' };
   try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'));
-    return { protection: parsed.protection === 'protect' ? 'protect' : 'observe' };
+    const parsed = readProtectedJson(path, { protection: 'observe' });
+    if (!['observe', 'protect'].includes(parsed.protection)) throw new Error('Invalid protection mode');
+    return { protection: parsed.protection };
   } catch {
-    return { protection: 'observe' };
+    // A damaged file must not silently disable a previously enabled defence.
+    return { protection: 'protect', integrityError: 'Protection mode configuration was rejected; restore a trusted backup' };
   }
 }
 
 export function saveSettings(settings, path = defaultSettingsPath()) {
-  mkdirSync(dirname(path), { recursive: true });
-  const clean = { protection: settings.protection === 'protect' ? 'protect' : 'observe' };
-  writeFileSync(path, JSON.stringify(clean, null, 2) + '\n');
+  if (!['observe', 'protect'].includes(settings.protection)) throw new Error('Invalid protection mode');
+  const clean = { protection: settings.protection };
+  writeProtectedJson(path, clean);
   return clean;
 }
 

@@ -17,6 +17,7 @@ export function encode(msg) {
 // the buffer would grow without bound.
 export function createLineDecoder(onMessage, { onError, maxLineBytes = 64 * 1024 * 1024 } = {}) {
   let buffer = '';
+  let discarding = false;
   const decoder = new StringDecoder('utf8');
   return function push(chunk) {
     buffer += Buffer.isBuffer(chunk) ? decoder.write(chunk) : chunk;
@@ -24,6 +25,11 @@ export function createLineDecoder(onMessage, { onError, maxLineBytes = 64 * 1024
     while ((idx = buffer.indexOf('\n')) !== -1) {
       const line = buffer.slice(0, idx);
       buffer = buffer.slice(idx + 1);
+      if (discarding) { discarding = false; continue; }
+      if (Buffer.byteLength(line, 'utf8') > maxLineBytes) {
+        onError?.(new Error(`line exceeded ${maxLineBytes} bytes`), line.slice(0, 200));
+        continue;
+      }
       if (line.trim() === '') continue;
       let msg;
       try {
@@ -34,9 +40,10 @@ export function createLineDecoder(onMessage, { onError, maxLineBytes = 64 * 1024
       }
       onMessage(msg);
     }
-    if (buffer.length > maxLineBytes) {
+    if (Buffer.byteLength(buffer, 'utf8') > maxLineBytes) {
       onError?.(new Error(`line exceeded ${maxLineBytes} bytes without a newline; dropping buffer`), buffer.slice(0, 200));
       buffer = '';
+      discarding = true;
     }
   };
 }

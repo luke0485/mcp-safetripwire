@@ -124,3 +124,26 @@ test('responses for other methods are passed through untouched', () => {
   assert.deepEqual(msg.result, { content: [] });
   assert.equal(msg.error, undefined);
 });
+
+test('protect requires a manifest on every new inspector and refuses undeclared tools', () => {
+  const tools = [{ name: 'safe' }];
+  const ins = inspector({ posture: 'block', pinHash: hashTools(tools).hash });
+  assert.match(ins.onClientMessage(call('safe')).error.error.message, /manifest-not-verified/);
+  ins.onServerMessage(listOf(tools), 'tools/list');
+  assert.equal(ins.onClientMessage(call('safe')).forward, true);
+  assert.match(ins.onClientMessage(call('undeclared')).error.error.message, /tool-not-declared/);
+  const reconnected = inspector({ posture: 'block', pinHash: hashTools(tools).hash });
+  assert.equal(reconnected.onClientMessage(call('safe')).forward, false);
+});
+
+test('malformed, duplicate and incomplete manifests cannot grant trust', () => {
+  const tools = [{ name: 'safe' }];
+  for (const result of [{ tools: null }, { tools: [null] }, { tools: [{ name: 'safe' }, { name: 'safe' }] }, { tools, nextCursor: 'page2' }]) {
+    const ins = inspector({ posture: 'block', pinHash: hashTools(tools).hash });
+    ins.onServerMessage(listOf(tools), 'tools/list');
+    const msg = { jsonrpc: '2.0', id: 2, result };
+    ins.onServerMessage(msg, 'tools/list');
+    assert.equal(msg.error.code, -32009);
+    assert.equal(ins.onClientMessage(call('safe')).forward, false);
+  }
+});

@@ -25,21 +25,22 @@ test('settings round-trip through disk', () => {
   }
 });
 
-test('an unknown protection value degrades to observe, never to blocking', () => {
+test('an unknown stored protection value cannot silently disable blocking', () => {
   const p = tempPath();
   try {
     writeFileSync(p, JSON.stringify({ protection: 'yolo' }));
-    assert.equal(loadSettings(p).protection, 'observe');
+    assert.equal(loadSettings(p).protection, 'protect');
+    assert.ok(loadSettings(p).integrityError);
   } finally {
     rmSync(p, { force: true });
   }
 });
 
-test('corrupt settings degrade to observe', () => {
+test('corrupt settings fail closed instead of silently entering observe', () => {
   const p = tempPath();
   try {
     writeFileSync(p, '{ not json');
-    assert.equal(loadSettings(p).protection, 'observe');
+    assert.equal(loadSettings(p).protection, 'protect');
   } finally {
     rmSync(p, { force: true });
   }

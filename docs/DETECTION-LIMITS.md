@@ -33,3 +33,5 @@ Older writers cached separate chain heads and concurrent appends could fork the 
 哈希链用于发现记录间不一致，不能防止有写权限的人重写整条链；日志只有有限保留窗口。锁争用/磁盘错误时日志追加可能失败，程序优先保持代理转发。它不是远端存证或不可篡改的审计系统。
 
 The hash chain detects inconsistencies but does not prevent an actor with write access from rebuilding the entire chain. Retention is bounded. Lock contention or disk failures can prevent an append; proxy forwarding takes priority. This is not remote attestation or an immutable audit system.
+
+阻断模式要求每个新连接先完成工具清单核验，拒绝未声明工具和异常清单。当前分页工具清单暂不支持，返回明确错误，不以部分清单建立信任。 / Blocking mode verifies the tool manifest on every new connection and refuses undeclared tools and malformed manifests. Paginated manifests are currently unsupported and rejected explicitly rather than trusted partially.

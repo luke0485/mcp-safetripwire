@@ -12,7 +12,7 @@ An inspectable security broker between your Agent and its MCP tools.
 
 ![Windows](https://img.shields.io/badge/Windows-x64_Preview-252525)
 ![License](https://img.shields.io/badge/License-MIT-555555)
-![Tests](https://img.shields.io/badge/Tests-232_passed-3a6652)
+![Tests](https://img.shields.io/badge/Tests-250_passed-3a6652)
 ![No LLM](https://img.shields.io/badge/Detection-No_LLM_required-555555)
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)
@@ -49,6 +49,22 @@ Agent 能调用工具，也可能遇到被替换的工具清单、可疑的工�
 | Windows 托盘 | 关闭界面仍在后台运行；从托盘“退出”才结束后台服务 |
 
 Agent 目录包含 **57 个条目（56 个产品及自定义入口）**，其中 **30 个配置适配器**支持默认位置的配置读取。目录收录、图标适配和配置读取不等于对每个产品做过真实安装与完整兼容性认证。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
+
+
+## 最新功能完善
+
+- **每次连接都先核验**：阻断模式下，新连接先核验已批准的工具清单，再放行清单内的工具。
+- **配置完整性保护**：工具清单指纹、保护模式、自定义规则与中转配置支持本机完整性校验，异常状态会明确提示。
+- **更稳的长连接**：HTTP / SSE 与 stdio 增加消息大小、并发连接、会话和待回应请求限制，并支持闲置回收。
+- **更克制的记录**：审计减少原始提示词、资源地址和启动参数的记录，保留工具、字段和域名等必要信息。
+
+这些能力用于已接入的 MCP 通道。当前分页工具清单暂不支持；本机完整性校验不能替代系统隔离或发布者签名。
+
+### Recent capability improvements
+
+Each new connection verifies its approved tool manifest before calls are allowed in blocking mode. Local integrity checks cover manifests, protection mode, custom rules and relay configuration. Bounded messages, connections, sessions and outstanding requests improve transport stability. Audit records retain less raw content.
+
+Coverage applies to routed MCP channels. Paginated tool manifests are currently unsupported; local integrity checks do not replace OS isolation or publisher signing.
 
 ## 快速上手
 
@@ -125,4 +141,3 @@ This is a preview, not a sandbox, endpoint firewall or independently audited sec
 ## 许可证
 
 项目代码采用 [MIT License](LICENSE)。第三方 Agent 名称、商标和图标属于各自权利人，不因本项目的 MIT 许可证转授其商标权；图标来源见 [assets/README.md](assets/README.md)。
-

@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createHttpProxy, MAX_HTTP_BODY_BYTES } from '../src/httpproxy.js';
+import { createHttpProxy, MAX_HTTP_BODY_BYTES, MAX_HTTP_SESSIONS, MAX_PENDING_REQUESTS } from '../src/httpproxy.js';
 import { localUrlFor } from '../src/routes.js';
 import { loadState, saveState, setPin, hashTools } from '../src/manifest.js';
 import { encodeSseEvent } from '../src/sse.js';
@@ -47,7 +47,7 @@ test('HTTP stops oversized JSON responses without returning partial data', async
     req.resume();
     req.on('end', () => { res.writeHead(200, { 'content-type': 'application/json' }); res.end('x'.repeat(MAX_HTTP_BODY_BYTES + 1)); });
   });
-  const response = await fetch(env.origin + '/demo/mcp', { method: 'POST', body: '{}' });
+  const response = await fetch(env.origin + '/demo/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' }) });
   assert.equal(response.status, 502);
   assert.match((await response.json()).error.message, /exceeds 8 MiB/);
 });
@@ -156,4 +156,55 @@ test('running HTTP proxy picks up newly registered routes without restarting', {
   assert.equal((await fetch(env.origin + '/demo/mcp')).status, 200);
   liveRoutes = { servers: {} };
   assert.equal((await fetch(env.origin + '/demo/mcp')).status, 404);
+});
+
+test('HTTP rejects foreign origins, batches and compressed requests before upstream', async t => {
+  let calls = 0;
+  const env = await setup(t, (req, res) => { calls++; req.resume(); res.end(); });
+  const ping = { jsonrpc: '2.0', id: 1, method: 'ping' };
+  for (const origin of ['https://attacker.example', 'null']) {
+    const response = await fetch(env.origin + '/demo/mcp', { method: 'POST', headers: { origin }, body: JSON.stringify(ping) });
+    assert.equal(response.status, 403);
+  }
+  for (const body of [[], [ping], {}, null]) {
+    const response = await fetch(env.origin + '/demo/mcp', { method: 'POST', body: JSON.stringify(body) });
+    assert.equal(response.status, 400);
+  }
+  const compressed = await fetch(env.origin + '/demo/mcp', { method: 'POST', headers: { 'content-encoding': 'gzip' }, body: JSON.stringify(ping) });
+  assert.equal(compressed.status, 400);
+  assert.equal(calls, 0);
+});
+
+test('HTTP rejects redirects and encoded upstream bodies', async t => {
+  let redirect = true;
+  const env = await setup(t, (req, res) => {
+    req.resume();
+    req.on('end', () => {
+      res.writeHead(redirect ? 302 : 200, redirect ? { location: 'https://example.com' } : { 'content-encoding': 'gzip' });
+      res.end('uninspectable');
+    });
+  });
+  const body = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' });
+  assert.equal((await fetch(env.origin + '/demo/mcp', { method: 'POST', body })).status, 502);
+  redirect = false;
+  assert.equal((await fetch(env.origin + '/demo/mcp', { method: 'POST', body })).status, 502);
+});
+
+test('HTTP pending requests are bounded and duplicate IDs never reach upstream', async t => {
+  let calls = 0;
+  const env = await setup(t, (req, res) => { calls++; req.resume(); req.on('end', () => { res.writeHead(202); res.end(); }); });
+  const post = id => fetch(env.origin + '/demo/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id, method: 'ping' }) });
+  for (let id = 0; id < MAX_PENDING_REQUESTS; id++) assert.equal((await post(id)).status, 202);
+  assert.equal((await post(0)).status, 409);
+  assert.equal((await post(MAX_PENDING_REQUESTS)).status, 409);
+  assert.equal(calls, MAX_PENDING_REQUESTS);
+});
+
+test('HTTP sessions are bounded and DELETE reclaims a session', async t => {
+  const env = await setup(t, (req, res) => { req.resume(); req.on('end', () => { res.writeHead(204); res.end(); }); });
+  const send = (session, method = 'POST') => fetch(env.origin + '/demo/mcp', { method, headers: { 'mcp-session-id': String(session) }, ...(method === 'POST' ? { body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping' }) } : {}) });
+  for (let id = 0; id < MAX_HTTP_SESSIONS; id++) assert.equal((await send(id)).status, 204);
+  assert.equal((await send('extra')).status, 503);
+  assert.equal((await send(0, 'DELETE')).status, 204);
+  assert.equal((await send('extra')).status, 204);
 });
