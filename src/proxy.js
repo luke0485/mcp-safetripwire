@@ -138,7 +138,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
     (msg) => {
       if (!isJsonRpc(msg)) { log('warn', 'server-parse-error', { name, error: 'Invalid JSON-RPC message' }); return; }
       let method;
-      if (msg && msg.id !== undefined) {
+      if (msg && msg.id !== undefined && msg.method === undefined) {
         method = pending.get(JSON.stringify(msg.id));
         pending.delete(JSON.stringify(msg.id));
       }

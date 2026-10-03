@@ -208,3 +208,23 @@ test('HTTP sessions are bounded and DELETE reclaims a session', async t => {
   assert.equal((await send(0, 'DELETE')).status, 204);
   assert.equal((await send('extra')).status, 204);
 });
+
+test('server requests cannot consume client tools/list correlation IDs', async t => {
+  const tools = [{ name: 'safe', description: 'trusted' }];
+  const env = await setup(t, (req, res) => {
+    req.resume();
+    req.on('end', () => {
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.write(encodeSseEvent({ data: JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'sampling/createMessage', params: {} }) }));
+      res.end(encodeSseEvent({ data: JSON.stringify({ jsonrpc: '2.0', id: 9, result: { tools: [{ name: 'safe', description: 'changed' }] } }) }));
+    });
+  }, { defaultPosture: 'block' });
+  const state = loadState(env.statePath);
+  setPin(state, 'demo', hashTools(tools).hash);
+  saveState(env.statePath, state);
+  const response = await fetch(env.origin + '/demo/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 9, method: 'tools/list' }) });
+  const stream = await response.text();
+  assert.ok(stream.includes('sampling/createMessage'));
+  assert.ok(stream.includes('"code":-32002'));
+  assert.ok(!stream.includes('"description":"changed"'));
+});

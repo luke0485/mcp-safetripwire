@@ -343,8 +343,8 @@ function relayResponse(upstreamRes, res, ctx, pending) {
       const headers = filterHeaders(upstreamRes.headers);
       res.writeHead(upstreamRes.statusCode ?? 502, headers);
       if (msg && isJsonRpc(msg)) {
-        const method = msg.id !== undefined ? pending.get(JSON.stringify(msg.id)) : undefined;
-        if (msg.id !== undefined) pending.delete(JSON.stringify(msg.id));
+        const method = msg.id !== undefined && msg.method === undefined ? pending.get(JSON.stringify(msg.id)) : undefined;
+        if (msg.id !== undefined && msg.method === undefined) pending.delete(JSON.stringify(msg.id));
         inspectResponse(ctx, msg, method);
         res.end(JSON.stringify(msg));
         return;
@@ -386,8 +386,8 @@ function relaySse(upstreamRes, res, ctx, pending) {
       write(encodeSseEvent(ev));
       return;
     }
-    const method = msg.id !== undefined ? pending.get(JSON.stringify(msg.id)) : undefined;
-    if (msg.id !== undefined) pending.delete(JSON.stringify(msg.id));
+    const method = msg.id !== undefined && msg.method === undefined ? pending.get(JSON.stringify(msg.id)) : undefined;
+    if (msg.id !== undefined && msg.method === undefined) pending.delete(JSON.stringify(msg.id));
     inspectResponse(ctx, msg, method);
     write(encodeSseEvent({ event: ev.event, id: ev.id, data: JSON.stringify(msg) }));
     } catch (err) { fail(res, ctx, err); upstreamRes.destroy(); }

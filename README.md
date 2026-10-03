@@ -12,7 +12,7 @@ An inspectable security broker between your Agent and its MCP tools.
 
 ![Windows](https://img.shields.io/badge/Windows-x64_Preview-252525)
 ![License](https://img.shields.io/badge/License-MIT-555555)
-![Tests](https://img.shields.io/badge/Tests-250_passed-3a6652)
+![Tests](https://img.shields.io/badge/Tests-253_passed-3a6652)
 ![No LLM](https://img.shields.io/badge/Detection-No_LLM_required-555555)
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)

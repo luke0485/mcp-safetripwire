@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, renameSync, rmSync, openSync, fsyncSync, closeSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { createHmac, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
@@ -67,8 +67,9 @@ export function defaultRoutesPath() {
 }
 
 export function loadRoutes(path) {
-  if (!path || !existsSync(path)) return { listen: defaultListen(), servers: {} };
+  if (!path || (!existsSync(path) && !existsSync(path + '.key'))) return { listen: defaultListen(), servers: {} };
   try {
+    if (statSync(path).size > 1024 * 1024) throw new Error('Remote configuration exceeds 1 MiB');
     const parsed = JSON.parse(readFileSync(path, 'utf8'));
     if (!verifyRoutes(path, parsed)) throw new Error('Remote configuration integrity check failed');
     rejected.delete(path);
@@ -89,16 +90,25 @@ export function loadRoutes(path) {
 
 export function saveRoutes(path, routes) {
   if (routes.integrityError) throw new Error('Cannot save rejected remote configuration');
+  if (!existsSync(path) && existsSync(path + '.key')) throw new Error('Remote configuration was removed outside Tripwire');
   if (existsSync(path)) {
     const previous = JSON.parse(readFileSync(path, 'utf8'));
     if (!verifyRoutes(path, previous)) throw new Error('Remote configuration was changed outside Tripwire');
   }
+  const body = JSON.parse(JSON.stringify({ listen: { ...defaultListen(), ...routes.listen }, servers: routes.servers ?? {} }));
+  const estimate = JSON.stringify({ ...body, integrity: { version: 1, signature: '0'.repeat(64) } }, null, 2) + '\n';
+  if (Buffer.byteLength(estimate) > 1024 * 1024) throw new Error('Remote configuration exceeds 1 MiB');
   mkdirSync(dirname(path), { recursive: true });
   const keyPath = path + '.key';
   if (!existsSync(keyPath)) writeFileSync(keyPath, randomBytes(32), { flag: 'wx', mode: 0o600 });
-  const body = JSON.parse(JSON.stringify({ listen: { ...defaultListen(), ...routes.listen }, servers: routes.servers ?? {} }));
   const signature = createHmac('sha256', readFileSync(keyPath)).update(canonical(body)).digest('hex');
-  writeFileSync(path, JSON.stringify({ ...body, integrity: { version: 1, signature } }, null, 2) + '\n');
+  const temp = path + '.' + randomBytes(8).toString('hex') + '.tmp';
+  try {
+    const fd = openSync(temp, 'wx', 0o600);
+    try { writeFileSync(fd, JSON.stringify({ ...body, integrity: { version: 1, signature } }, null, 2) + '\n'); fsyncSync(fd); }
+    finally { closeSync(fd); }
+    renameSync(temp, path);
+  } finally { rmSync(temp, { force: true }); }
   rejected.delete(path);
   log('info', 'remote-config-saved', { channels: Object.keys(body.servers) });
 }
@@ -112,6 +122,7 @@ function canonical(value) {
 function verifyRoutes(path, parsed) {
   try {
     const { integrity, ...body } = parsed;
+    if (statSync(path + '.key').size !== 32) return false;
     if (integrity?.version !== 1 || !/^[a-f0-9]{64}$/.test(integrity.signature)) return false;
     const expected = createHmac('sha256', readFileSync(path + '.key')).update(canonical(body)).digest();
     return timingSafeEqual(expected, Buffer.from(integrity.signature, 'hex'));

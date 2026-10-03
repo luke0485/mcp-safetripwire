@@ -86,3 +86,26 @@ test('a missing routes file yields empty defaults', () => {
   assert.deepEqual(loaded.servers, {});
   assert.equal(loaded.listen.port, 8788);
 });
+
+test('deleted signed routes fail closed and cannot be silently recreated', () => {
+  const path = join(tmpdir(), `tripwire-delete-route-${process.pid}-${Date.now()}.json`);
+  try {
+    saveRoutes(path, routes);
+    rmSync(path);
+    assert.ok(loadRoutes(path).integrityError);
+    assert.throws(() => saveRoutes(path, routes), /removed outside/);
+  } finally { rmSync(path, { force: true }); rmSync(path + '.key', { force: true }); }
+});
+
+test('oversized routes are rejected before creating a key or replacing a valid file', () => {
+  const path = join(tmpdir(), `tripwire-large-route-${process.pid}-${Date.now()}.json`);
+  try {
+    const oversized = { servers: { huge: { upstream: 'https://example.com/' + 'x'.repeat(1024 * 1024) } } };
+    assert.throws(() => saveRoutes(path, oversized), /1 MiB/);
+    assert.equal(loadRoutes(path).integrityError, undefined);
+    saveRoutes(path, routes);
+    const before = readFileSync(path, 'utf8');
+    assert.throws(() => saveRoutes(path, oversized), /1 MiB/);
+    assert.equal(readFileSync(path, 'utf8'), before);
+  } finally { rmSync(path, { force: true }); rmSync(path + '.key', { force: true }); }
+});
