@@ -3,6 +3,13 @@
   "version": "0.1.0",
   "description": "MCP Tripwire - a transparent, LLM-free security broker for the Model Context Protocol: manifest pinning, static poisoning scan, capability policy, and audit logging.",
   "type": "module",
+  "author": "lukek0485 (https://github.com/luke0485)",
+  "homepage": "https://github.com/luke0485/mcp-tripwire#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/luke0485/mcp-tripwire.git"
+  },
+  "keywords": ["mcp", "model-context-protocol", "mcp-security", "tool-poisoning", "ai-agent", "windows", "audit", "lukek0485"],
   "bin": {
     "mcp-tripwire": "./src/cli.js"
   },
