@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/luke0485/mcp-tripwire/main/assets/logo-256.png" width="128" height="128" alt="MCP SafeTripwire Logo" />
+  <img src="https://raw.githubusercontent.com/luke0485/mcp-safetripwire/main/assets/logo-256.png" width="128" height="128" alt="MCP SafeTripwire Logo" />
 </p>
 
 <div align="center">
@@ -8,7 +8,7 @@
 
 **MCP 安全绊线 · 作者 [luke0485](https://github.com/luke0485)**
 
-[官方仓库 / Official repository](https://github.com/luke0485/mcp-tripwire)
+[官方仓库 / Official repository](https://github.com/luke0485/mcp-safetripwire)
 
 **让 Agent 继续工作，让 MCP 多一道检查。**
 
@@ -21,7 +21,7 @@ An inspectable security broker between your Agent and its MCP tools.
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)
 
-[**下载 Windows 初版**](https://github.com/luke0485/mcp-tripwire/releases/tag/initial) · [查看构建状态](https://github.com/luke0485/mcp-tripwire/actions)
+[**下载 Windows 初版**](https://github.com/luke0485/mcp-safetripwire/releases/tag/initial) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
 </div>
 
 ![Agent → Tripwire → MCP](assets/readme/flow.svg)
