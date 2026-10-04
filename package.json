@@ -1,7 +1,7 @@
 {
-  "name": "mcp-tripwire",
+  "name": "mcp-safetripwire",
   "version": "0.1.0",
-  "description": "MCP Tripwire - a transparent, LLM-free security broker for the Model Context Protocol: manifest pinning, static poisoning scan, capability policy, and audit logging.",
+  "description": "MCP SafeTripwire - a transparent, LLM-free security broker for the Model Context Protocol: manifest pinning, static poisoning scan, capability policy, and audit logging.",
   "type": "module",
   "author": "luke0485 (https://github.com/luke0485)",
   "homepage": "https://github.com/luke0485/mcp-tripwire#readme",

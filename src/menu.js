@@ -13,7 +13,7 @@ import { defaultLogPath, defaultStatePath } from './paths.js';
 const CLI = join(dirname(fileURLToPath(import.meta.url)), 'cli.js');
 
 const MENU = `
-  MCP Tripwire — MCP 安全 broker
+  MCP SafeTripwire — MCP 安全 broker
   ────────────────────────────────────────────────
    1  环境与宿主状态            doctor
    2  审计一个 stdio 服务器      scan

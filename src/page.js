@@ -363,12 +363,12 @@ function escapeForHtml(value) {
 export function renderPage({ startedAt = '' } = {}) {
   const stamp = escapeForHtml(startedAt);
   return `<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MCP Tripwire</title><link rel="icon" href="${BRAND_LOGO}">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MCP SafeTripwire</title><link rel="icon" href="${BRAND_LOGO}">
 <style>${STYLES}</style></head>
 <body>
 <div class="startup" id="startup" aria-hidden="true"><img src="${BRAND_LOGO}" alt=""></div>
 <header>
-  <div><h1 style="display:flex;align-items:center;gap:12px">MCP Tripwire<img src="${BRAND_LOGO}" alt="" width="30" height="30"></h1><p class="lede" id="lede"></p><p class="stamp">__STARTED__</p></div>
+  <div><h1 style="display:flex;align-items:center;gap:12px">MCP SafeTripwire<img src="${BRAND_LOGO}" alt="" width="30" height="30"></h1><p class="lede" id="lede"></p><p class="stamp">__STARTED__</p></div>
   <button class="langbtn" id="langbtn"></button>
 </header>
 <nav id="nav"></nav>

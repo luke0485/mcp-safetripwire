@@ -13,10 +13,10 @@ if (!exe || !existsSync(exe)) {
 }
 
 const opts = {
-  productName: 'MCP Tripwire',
-  companyName: 'MCP Tripwire',
-  fileDescription: 'MCP Tripwire - MCP channel guard',
-  legalCopyright: 'Copyright (c) 2026 MCP Tripwire',
+  productName: 'MCP SafeTripwire',
+  companyName: 'MCP SafeTripwire',
+  fileDescription: 'MCP SafeTripwire - MCP channel guard',
+  legalCopyright: 'Copyright (c) 2026 MCP SafeTripwire',
   fileVersion: '0.1.0',
   productVersion: '0.1.0',
 };

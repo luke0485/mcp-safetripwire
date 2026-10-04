@@ -1,12 +1,12 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/luke0485/mcp-tripwire/main/assets/logo-256.png" width="128" height="128" alt="MCP Tripwire Logo" />
+  <img src="https://raw.githubusercontent.com/luke0485/mcp-tripwire/main/assets/logo-256.png" width="128" height="128" alt="MCP SafeTripwire Logo" />
 </p>
 
 <div align="center">
 
-# MCP Tripwire
+# MCP SafeTripwire · MCP 安全绊线
 
-**MCP 绊线 · 作者 [luke0485](https://github.com/luke0485)**
+**MCP 安全绊线 · 作者 [luke0485](https://github.com/luke0485)**
 
 [官方仓库 / Official repository](https://github.com/luke0485/mcp-tripwire)
 
@@ -136,7 +136,7 @@ Mac 和 Linux 当前未提供正式发行包，暂无承诺日期。欢迎提交
 
 ## English
 
-MCP Tripwire is a Windows-first, LLM-free security broker for MCP traffic explicitly routed through it. It combines reviewed manifest fingerprints, static rules, tool/domain blacklists, manually frozen behaviour baselines and local audit logging. Observe first, review trusted channels, then enable blocking when appropriate.
+MCP SafeTripwire is a Windows-first, LLM-free security broker for MCP traffic explicitly routed through it. It combines reviewed manifest fingerprints, static rules, tool/domain blacklists, manually frozen behaviour baselines and local audit logging. Observe first, review trusted channels, then enable blocking when appropriate.
 
 This is a preview, not a sandbox, endpoint firewall or independently audited security product. Bypassed connections and Agent built-in tools are outside its scope. macOS and Linux support are planned for later development; no release date is promised.
 
