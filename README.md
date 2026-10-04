@@ -16,12 +16,12 @@ An inspectable security broker between your Agent and its MCP tools.
 
 ![Windows](https://img.shields.io/badge/Windows-x64_Preview-252525)
 ![License](https://img.shields.io/badge/License-MIT-555555)
-![Tests](https://img.shields.io/badge/Tests-254_passed-3a6652)
+[![Windows checks](https://github.com/luke0485/mcp-safetripwire/actions/workflows/ci.yml/badge.svg)](https://github.com/luke0485/mcp-safetripwire/actions)
 ![No LLM](https://img.shields.io/badge/Detection-No_LLM_required-555555)
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)
 
-[**下载 Windows 初版**](https://github.com/luke0485/mcp-safetripwire/releases/tag/initial) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
+[**Windows 发行页面（安装包待发布）**](https://github.com/luke0485/mcp-safetripwire/releases) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
 </div>
 
 ![Agent → Tripwire → MCP](assets/readme/flow.svg)
@@ -93,7 +93,7 @@ Windows 构建目前没有付费 Authenticode 签名，系统可能提示“未�
 - 保护范围是经过代理的 MCP。Agent 内置工具、绕过代理的连接、直接网络请求和系统操作不在覆盖范围内。
 - 域名检查针对参数中的引用，不是系统网络防火墙，也不能证明真实联网行为。
 - 静态规则与基线可能误报或漏报；当前没有代表真实用户的标注数据集，不公布检测准确率。
-- 进阶规则和 HTTP 路由有本机 HMAC 校验，但密钥同账户保存；不能抵御控制该账户的攻击者。工具指纹和全局模式存储还需要继续加固。
+- 进阶规则和 HTTP 路由有本机 HMAC 校验，但密钥同账户保存；不能抵御控制该账户的攻击者。同账户攻击防护还需要继续加固。
 - 审计哈希链能发现不一致，不能防止有写权限的人替换整条链。日志有有限保留窗口，写入故障可能导致记录缺失。
 - HTTP 请求和缓冲 JSON 响应上限为 8 MiB；流式 SSE、会话资源限制及 OAuth / mTLS 等组合仍需进一步验证。
 
@@ -110,7 +110,7 @@ npm run doctor
 node src/cli.js console
 ```
 
-当前 **232 项自动化测试通过**，覆盖规则判断、黑名单、基线、配置适配、管理接口、审计并发、stdio 与模拟 HTTP 服务。测试使用临时目录和模拟服务；没有对用户真实 MCP 执行危险攻击。测试通过不代表所有 Agent 实机认证或生产环境零误报。
+自动化测试，覆盖规则判断、黑名单、基线、配置适配、管理接口、审计并发、stdio 与模拟 HTTP 服务。测试使用临时目录和模拟服务；没有对用户真实 MCP 执行危险攻击。测试通过不代表所有 Agent 实机认证或生产环境零误报。
 
 本次生产依赖检查 `npm audit --omit=dev` 为 0 个已知漏洞；仅表示检查时依赖数据库的结果。
 
