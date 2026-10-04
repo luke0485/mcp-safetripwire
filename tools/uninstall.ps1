@@ -63,7 +63,7 @@ if (Test-Path -LiteralPath $routes) {
 }
 
 # 3) shortcut + autostart
-foreach ($name in @('MCP Tripwire.lnk', 'MCP Tripwire (menu).lnk', 'MCP Tripwire (source).lnk')) {
+foreach ($name in @('MCP SafeTripwire.lnk', 'MCP Tripwire.lnk', 'MCP Tripwire (menu).lnk', 'MCP Tripwire (source).lnk')) {
     $p = Join-Path $Desktop $name
     if (Test-Path -LiteralPath $p) {
         Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue

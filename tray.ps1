@@ -1,4 +1,4 @@
-﻿# MCP Tripwire tray app.
+# MCP SafeTripwire tray app.
 #
 # This is what the desktop shortcut launches. It is the piece that makes the
 # product feel like a program rather than a page:
@@ -44,11 +44,11 @@ function L($zhText, $enText) { if ($zh) { $zhText } else { $enText } }
 
 trap {
     $err = $_
-    $detail = "MCP Tripwire could not start." + [char]10 + [char]10 + $err.Exception.Message + [char]10 + [char]10 + $err.ScriptStackTrace
+    $detail = "MCP SafeTripwire could not start." + [char]10 + [char]10 + $err.Exception.Message + [char]10 + [char]10 + $err.ScriptStackTrace
     Trace('FATAL: ' + $detail)
     if (-not $startupComplete -and -not $fatalShown) {
         $fatalShown = $true
-        try { [System.Windows.Forms.MessageBox]::Show($detail, 'MCP Tripwire', 'OK', 'Error') | Out-Null } catch { }
+        try { [System.Windows.Forms.MessageBox]::Show($detail, 'MCP SafeTripwire', 'OK', 'Error') | Out-Null } catch { }
     }
     exit 1
 }
@@ -296,7 +296,7 @@ function Set-Protection([string]$mode) {
         Invoke-RestMethod -Uri "$base/api/protection" -Method Post -Headers $headers `
             -ContentType 'application/json' -Body (@{ protection = $mode } | ConvertTo-Json) | Out-Null
         $what = if ($mode -eq 'protect') { L '已切换为主动保护' 'Switched to Active protection' } else { L '已切换为只观察' 'Switched to Observe only' }
-        $tray.ShowBalloonTip(3000, 'MCP Tripwire', $what, [System.Windows.Forms.ToolTipIcon]::Info)
+        $tray.ShowBalloonTip(3000, 'MCP SafeTripwire', $what, [System.Windows.Forms.ToolTipIcon]::Info)
     } catch {
         Trace('set-protection failed: ' + $_.Exception.Message)
     }
@@ -307,7 +307,7 @@ $tray = New-Object System.Windows.Forms.NotifyIcon
 $icoPath = Join-Path $root 'assets\logo.ico'
 if (Test-Path -LiteralPath $icoPath) { $tray.Icon = New-Object System.Drawing.Icon($icoPath) }
 else { $tray.Icon = [System.Drawing.SystemIcons]::Shield }
-$tray.Text = 'MCP Tripwire'
+$tray.Text = 'MCP SafeTripwire'
 $tray.Visible = $true
 $tray.add_DoubleClick({ Open-Panel })
 
@@ -327,7 +327,7 @@ $miProtect.add_Click({ Set-Protection 'protect' })
 $miRecords.add_Click({ try { & (Join-Path $System32 'explorer.exe') $dataDir } catch { Trace('open records failed: ' + $_.Exception.Message) } })
 $miMute.add_Click({
     $state.mutedUntil = (Get-Date).AddHours(1)
-    try { $tray.ShowBalloonTip(3000, 'MCP Tripwire', (L '通知已静音 1 小时' 'Notifications muted for 1 hour'), [System.Windows.Forms.ToolTipIcon]::Info) } catch { }
+    try { $tray.ShowBalloonTip(3000, 'MCP SafeTripwire', (L '通知已静音 1 小时' 'Notifications muted for 1 hour'), [System.Windows.Forms.ToolTipIcon]::Info) } catch { }
 })
 
 # Stopping must be idempotent and must kill the timer FIRST: if the message loop
@@ -373,17 +373,17 @@ $timer.add_Tick({
             } catch { }
             if (-not $state.deadNotified) {
                 $state.deadNotified = $true
-                try { $tray.ShowBalloonTip(5000, 'MCP Tripwire', (L '后台已停止' 'The background process stopped'), [System.Windows.Forms.ToolTipIcon]::Error) } catch { }
+                try { $tray.ShowBalloonTip(5000, 'MCP SafeTripwire', (L '后台已停止' 'The background process stopped'), [System.Windows.Forms.ToolTipIcon]::Error) } catch { }
             }
             # Keep the tray available even when the backend cannot restart.
             # Only its Quit menu ends this lifecycle.
-            $tray.Text = L 'MCP Tripwire - 后台恢复中' 'MCP Tripwire - recovering'
+            $tray.Text = L 'MCP SafeTripwire - 后台恢复中' 'MCP SafeTripwire - recovering'
             return
         }
         $r = Invoke-RestMethod -Uri "$base/api/events?limit=20" -Headers $headers -TimeoutSec 3
         $state.restarts = 0
         $state.deadNotified = $false
-        $tray.Text = 'MCP Tripwire'
+        $tray.Text = 'MCP SafeTripwire'
         $events = @($r.events)
         if ($events.Count -eq 0) { return }
         $maxTs = (@($events | ForEach-Object { [string]$_.ts }) | Sort-Object)[-1]
@@ -403,7 +403,7 @@ $timer.add_Tick({
             $shown++
             $body = Event-Label $e
             if ($body.Length -gt 220) { $body = $body.Substring(0, 220) + [char]8230 }
-            $tray.ShowBalloonTip(7000, (L 'MCP Tripwire 警告' 'MCP Tripwire alert'), $body, [System.Windows.Forms.ToolTipIcon]::Warning)
+            $tray.ShowBalloonTip(7000, (L 'MCP SafeTripwire 警告' 'MCP SafeTripwire alert'), $body, [System.Windows.Forms.ToolTipIcon]::Warning)
         }
     } catch {
         Trace('tick error: ' + $_.Exception.Message)

@@ -1,4 +1,4 @@
-# Creates the single desktop entry point for MCP Tripwire.
+# Creates the single desktop entry point for MCP SafeTripwire.
 #
 # One icon, launching the tray through PowerShell directly. A .vbs launcher is a
 # common malware shape and gets flagged by endpoint security, which is how a
@@ -18,7 +18,7 @@ $Desktop = [Environment]::GetFolderPath('Desktop')
 $shell = New-Object -ComObject WScript.Shell
 
 # Remove the earlier multi-icon layout if it is still around.
-foreach ($legacy in @('MCP Tripwire (menu).lnk', 'MCP Tripwire (source).lnk')) {
+foreach ($legacy in @('MCP SafeTripwire (menu).lnk', 'MCP SafeTripwire (source).lnk')) {
     $p = Join-Path $Desktop $legacy
     if (Test-Path -LiteralPath $p) {
         Remove-Item -LiteralPath $p -Force
@@ -27,7 +27,7 @@ foreach ($legacy in @('MCP Tripwire (menu).lnk', 'MCP Tripwire (source).lnk')) {
 }
 
 $launcherExe = Join-Path $env:SystemRoot 'System32\wscript.exe'
-$link = Join-Path $Desktop 'MCP Tripwire.lnk'
+$link = Join-Path $Desktop 'MCP SafeTripwire.lnk'
 
 $sc = $shell.CreateShortcut($link)
 $sc.TargetPath = $launcherExe
@@ -35,7 +35,7 @@ $sc.TargetPath = $launcherExe
 # escaped quotes is what made the earlier version of this script throw.
 $sc.Arguments = [char]34 + (Join-Path $ProjectDir 'tray.vbs') + [char]34
 $sc.WorkingDirectory = $ProjectDir
-$sc.Description = 'MCP Tripwire'
+$sc.Description = 'MCP SafeTripwire'
 
 $icon = Join-Path $ProjectDir 'assets\logo.ico'
 if (Test-Path -LiteralPath $icon) {
