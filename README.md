@@ -6,7 +6,7 @@
 
 # MCP Tripwire
 
-**MCP 绊线 · 作者 [lukek0485（GitHub：luke0485）](https://github.com/luke0485)**
+**MCP 绊线 · 作者 [luke0485](https://github.com/luke0485)**
 
 [官方仓库 / Official repository](https://github.com/luke0485/mcp-tripwire)
 
@@ -30,9 +30,9 @@ Agent 能调用工具，也可能遇到被替换的工具清单、可疑的工�
 
 当前发布定位是 **Windows 预览版**，不是经过独立审计的企业安全产品。Mac 和 Linux 版本将在后续推进。
 
-由 **lukek0485** 独立维护的开源 MCP 安全工具，包含工具投毒检查、工具清单完整性检查、行为基线、黑名单、主动阻断和审计日志。本仓库与其他同名项目分别维护。
+由 **luke0485** 独立维护的开源 MCP 安全工具，包含工具投毒检查、工具清单完整性检查、行为基线、黑名单、主动阻断和审计日志。本仓库与其他同名项目分别维护。
 
-Open-source Model Context Protocol (MCP) security for Windows: tool poisoning checks, manifest integrity, behavior baselines, blacklists, request blocking, and audit logging. Maintained by **lukek0485**, GitHub account **luke0485**.
+Open-source Model Context Protocol (MCP) security for Windows: tool poisoning checks, manifest integrity, behavior baselines, blacklists, request blocking, and audit logging. Maintained by **luke0485**, GitHub account **luke0485**.
 
 ## 看得见的保护
 
@@ -142,7 +142,7 @@ This is a preview, not a sandbox, endpoint firewall or independently audited sec
 
 ## 作者与协作 / Credits
 
-**作者 / Author：lukek0485**
+**作者 / Author：luke0485**
 
 **AI 协作模型 / AI collaborators：DeepSeek V4.1 Flash、GPT6.1sol**
 
