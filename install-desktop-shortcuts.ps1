@@ -1,4 +1,4 @@
-# Creates the single desktop entry point for MCP SafeTripwire.
+﻿# Creates the single desktop entry point for MCP SafeTripwire.
 #
 # One icon, launching the tray through PowerShell directly. A .vbs launcher is a
 # common malware shape and gets flagged by endpoint security, which is how a

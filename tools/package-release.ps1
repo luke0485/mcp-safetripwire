@@ -1,4 +1,4 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $exe = Join-Path $projectRoot 'dist\safetripwire.exe'
 if (-not (Test-Path -LiteralPath $exe)) { throw 'Build dist/safetripwire.exe first.' }

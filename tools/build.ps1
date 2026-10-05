@@ -1,4 +1,4 @@
-# Builds dist\tripwire.exe -- a single executable that needs no Node installed.
+﻿# Builds dist\tripwire.exe -- a single executable that needs no Node installed.
 #
 # Pipeline:
 #   esbuild  -> one CommonJS file (also constant-folds the __TRIPWIRE_BUILT__

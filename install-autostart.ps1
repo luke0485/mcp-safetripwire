@@ -1,4 +1,4 @@
-# Installs (or removes) an autostart entry that runs the HTTP proxy at logon.
+﻿# Installs (or removes) an autostart entry that runs the HTTP proxy at logon.
 #
 # This is the "always-on" half of the story. Note what it can and cannot do:
 #   - the stdio transports need no daemon: the host launches mcp-tripwire itself,

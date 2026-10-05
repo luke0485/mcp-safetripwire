@@ -1,4 +1,4 @@
-# Keeps the two desktop artefacts in step with the working copy:
+﻿# Keeps the two desktop artefacts in step with the working copy:
 #   1. "MCP SafeTripwire 源码"  - a snapshot of the source tree
 #   2. "MCP SafeTripwire.lnk"   - the launcher shortcut (icon + target)
 # Run this after any change worth handing over.

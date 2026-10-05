@@ -1,4 +1,4 @@
-# Create a source-only archive; never include local data, dependencies or diagnostic logs.
+﻿# Create a source-only archive; never include local data, dependencies or diagnostic logs.
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $allowed = @('src','test','tools','docs','examples','assets','.github','package.json','package-lock.json','README.md','LICENSE','SECURITY.md','.gitignore','tray.ps1','tray.vbs','tripwire.cmd','install-autostart.ps1','install-desktop-shortcuts.ps1')

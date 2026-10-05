@@ -1,4 +1,4 @@
-# MCP SafeTripwire tray app.
+﻿# MCP SafeTripwire tray app.
 #
 # This is what the desktop shortcut launches. It is the piece that makes the
 # product feel like a program rather than a page:

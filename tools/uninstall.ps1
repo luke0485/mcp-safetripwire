@@ -1,4 +1,4 @@
-# One-click full uninstall of MCP Tripwire.
+﻿# One-click full uninstall of MCP Tripwire.
 #
 # What it does, in order:
 #   1. restores every host config from its newest Tripwire backup
