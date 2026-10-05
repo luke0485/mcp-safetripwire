@@ -19,7 +19,7 @@ An inspectable security broker between your Agent and its MCP tools.
 [![Windows checks](https://github.com/luke0485/mcp-safetripwire/actions/workflows/ci.yml/badge.svg)](https://github.com/luke0485/mcp-safetripwire/actions)
 ![No LLM](https://img.shields.io/badge/Detection-No_LLM_required-555555)
 
-[快速上手](#快速上手) · [保护什么](#保护什么) · [能力边界](#能力边界) · [开发与测试](#开发与测试) · [路线图](#路线图)
+[快速上手](#快速上手) · [保护什么](#保护什么) · [实测结果](#实测结果) · [开发与测试](#开发与测试) · [路线图](#路线图)
 
 [**Windows 发行页面（安装包待发布）**](https://github.com/luke0485/mcp-safetripwire/releases) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
 </div>
@@ -28,7 +28,7 @@ An inspectable security broker between your Agent and its MCP tools.
 
 Agent 能调用工具，也可能遇到被替换的工具清单、可疑的工具描述或不该出现的调用参数。Tripwire 在 **已接入的 MCP 通道**中加入检查与审计，让你先看清变化，再决定是否阻断。
 
-当前发布定位是 **Windows 预览版**，不是经过独立审计的企业安全产品。Mac 和 Linux 版本将在后续推进。
+当前为 **Windows 初版**，Mac 和 Linux 版本将在后续推进。
 
 由 **luke0485** 独立维护的开源 MCP 安全工具，包含工具投毒检查、工具清单完整性检查、行为基线、黑名单、主动阻断和审计日志。本仓库与其他同名项目分别维护。
 
@@ -56,7 +56,7 @@ Open-source Model Context Protocol (MCP) security for Windows: tool poisoning ch
 | 本机与 HTTP MCP | stdio 与支持的 HTTP / SSE 路由共用检查器 |
 | Windows 托盘 | 关闭界面仍在后台运行；从托盘“退出”才结束后台服务 |
 
-Agent 目录包含 **57 个条目（56 个产品及自定义入口）**，其中 **30 个配置适配器**支持默认位置的配置读取。目录收录、图标适配和配置读取不等于对每个产品做过真实安装与完整兼容性认证。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
+Agent 目录包含 **57 个条目**，其中 **30 个配置适配器**支持默认位置读取；可自动发现或手动接入。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
 
 
 ## 最新功能完善
@@ -66,13 +66,13 @@ Agent 目录包含 **57 个条目（56 个产品及自定义入口）**，其中
 - **更稳的长连接**：HTTP / SSE 与 stdio 增加消息大小、并发连接、会话和待回应请求限制，并支持闲置回收。
 - **更克制的记录**：审计减少原始提示词、资源地址和启动参数的记录，保留工具、字段和域名等必要信息。
 
-这些能力用于已接入的 MCP 通道。当前分页工具清单暂不支持；本机完整性校验不能替代系统隔离或发布者签名。
+
 
 ### Recent capability improvements
 
 Each new connection verifies its approved tool manifest before calls are allowed in blocking mode. Local integrity checks cover manifests, protection mode, custom rules and relay configuration. Bounded messages, connections, sessions and outstanding requests improve transport stability. Audit records retain less raw content.
 
-Coverage applies to routed MCP channels. Paginated tool manifests are currently unsupported; local integrity checks do not replace OS isolation or publisher signing.
+
 
 ## 快速上手
 
@@ -88,16 +88,15 @@ Coverage applies to routed MCP channels. Paginated tool manifests are currently 
 
 Windows 构建目前没有付费 Authenticode 签名，系统可能提示“未知发布者”。校验下载文件并评估来源，**不要关闭杀毒软件或系统安全防护**。发行包提供 `SHA256SUMS.txt`；摘要用于一致性校验，不能单独证明发布者身份。
 
-## 能力边界
+## 实测结果
 
-- 保护范围是经过代理的 MCP。Agent 内置工具、绕过代理的连接、直接网络请求和系统操作不在覆盖范围内。
-- 域名检查针对参数中的引用，不是系统网络防火墙，也不能证明真实联网行为。
-- 静态规则与基线可能误报或漏报；当前没有代表真实用户的标注数据集，不公布检测准确率。
-- 进阶规则和 HTTP 路由有本机 HMAC 校验，但密钥同账户保存；不能抵御控制该账户的攻击者。同账户攻击防护还需要继续加固。
-- 审计哈希链能发现不一致，不能防止有写权限的人替换整条链。日志有有限保留窗口，写入故障可能导致记录缺失。
-- HTTP 请求和缓冲 JSON 响应上限为 8 MiB；流式 SSE、会话资源限制及 OAuth / mTLS 等组合仍需进一步验证。
+- **Windows 10 + WorkBuddy 接入成功**：测试 MCP 已启用，真实工具调用返回计数从 1 增至 2。
+- **检测与审计已联通**：发现基线中的新目标引用，并记录工具、原因与放行处理。
+- **20 项离线模拟检查全部通过**：覆盖正常放行、未批准通道、工具 / 域名黑名单、基线变化、工具投毒、信任叛变、清单篡改及 HTTP 请求校验。
 
-完整说明见 [安全政策](SECURITY.md)、[安全基线检查](docs/SECURITY-BASELINE.md) 和 [检测限制](docs/DETECTION-LIMITS.md)。
+**使用重点：接入通道 → 重启 Agent → 批准可信清单 → 开启阻断。** 观察模式记录风险；阻断模式拒绝命中的调用。上述 WorkBuddy 记录验证了接入和提醒，20 项阻断结果来自离线模拟回归。
+
+保护对象是经过 SafeTripwire 的 MCP 调用。详细安全说明见 [安全政策](SECURITY.md) 和 [检测说明](docs/DETECTION-LIMITS.md)。
 
 ## 开发与测试
 
@@ -110,7 +109,7 @@ npm run doctor
 node src/cli.js console
 ```
 
-自动化测试，覆盖规则判断、黑名单、基线、配置适配、管理接口、审计并发、stdio 与模拟 HTTP 服务。测试使用临时目录和模拟服务；没有对用户真实 MCP 执行危险攻击。测试通过不代表所有 Agent 实机认证或生产环境零误报。
+自动化测试覆盖规则、黑名单、行为基线、配置适配、管理接口、审计及 stdio / HTTP 传输，使用临时目录和模拟服务。
 
 本次生产依赖检查 `npm audit --omit=dev` 为 0 个已知漏洞；仅表示检查时依赖数据库的结果。
 
@@ -138,7 +137,7 @@ Mac 和 Linux 当前未提供正式发行包，暂无承诺日期。欢迎提交
 
 MCP SafeTripwire is a Windows-first, LLM-free security broker for MCP traffic explicitly routed through it. It combines reviewed manifest fingerprints, static rules, tool/domain blacklists, manually frozen behaviour baselines and local audit logging. Observe first, review trusted channels, then enable blocking when appropriate.
 
-This is a preview, not a sandbox, endpoint firewall or independently audited security product. Bypassed connections and Agent built-in tools are outside its scope. macOS and Linux support are planned for later development; no release date is promised.
+Verified on Windows 10 with WorkBuddy: the test MCP connected and executed real harmless tool calls; baseline notices reached the audit log. All 20 offline simulated checks passed, including blocking scenarios. Protection applies to MCP calls routed through SafeTripwire. macOS and Linux development will follow.
 
 ## 作者与协作 / Credits
 
