@@ -2,7 +2,7 @@
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $exe = Join-Path $projectRoot 'dist\safetripwire.exe'
 if (-not (Test-Path -LiteralPath $exe)) { throw 'Build dist/safetripwire.exe first.' }
-$stage = Join-Path $projectRoot 'dist\portable'
+$stage = Join-Path $projectRoot ('dist\package-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path (Join-Path $stage 'dist') | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $stage 'assets') | Out-Null
 Copy-Item -LiteralPath $exe -Destination (Join-Path $stage 'dist\safetripwire.exe') -Force

@@ -21,7 +21,7 @@ An inspectable security broker between your Agent and its MCP tools.
 
 [快速上手](#快速上手) · [保护什么](#保护什么) · [实测结果](#实测结果) · [开发与测试](#开发与测试) · [路线图](#路线图)
 
-[**Windows 发行页面（安装包待发布）**](https://github.com/luke0485/mcp-safetripwire/releases) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
+[**下载 Windows 程序包**](https://github.com/luke0485/mcp-safetripwire/releases/latest/download/MCP-SafeTripwire-windows-x64.zip) · [查看构建状态](https://github.com/luke0485/mcp-safetripwire/actions)
 </div>
 
 ![Agent → SafeTripwire → MCP](assets/readme/flow.svg)
@@ -72,7 +72,7 @@ Each new connection verifies its approved tool manifest before calls are allowed
 
 ## 快速上手
 
-1. 在本仓库 **Releases** 下载 `MCP-SafeTripwire-windows-x64.zip`。如果尚无 Release，请先按下方步骤从源码运行。
+1. 在本仓库 **Releases** 下载 `MCP-SafeTripwire-windows-x64.zip`，无需自行编译。
 2. 完整解压到固定文件夹，双击 `Start MCP SafeTripwire.cmd`。无需另外安装 Node.js。
 3. 点击添加，选择 Agent，检查识别到的 MCP 通道，再接入需要保护的通道。自动改写配置前会保留备份。
 4. 重启对应 Agent，让配置生效；核对工具清单并批准可信通道。
@@ -82,7 +82,7 @@ Each new connection verifies its approved tool manifest before calls are allowed
 
 配置路径不在默认位置时，可手动指定配置文件。无法自动读配置的产品，只有在其支持自定义 MCP 时才能手动接入；“设置 HTTP MCP 中转”会进入远程服务页面，不会自动赋予不支持 MCP 的产品相关能力。
 
-Windows 构建目前没有付费 Authenticode 签名，系统可能提示“未知发布者”。校验下载文件并评估来源，**不要关闭杀毒软件或系统安全防护**。发行包提供 `SHA256SUMS.txt`；摘要用于一致性校验，不能单独证明发布者身份。
+Windows 程序未签名，不需要购买商业签名才能使用。若系统提示“未知发布者”，核对官方来源后可选择“更多信息 → 仍要运行”（系统允许时）。下载页提供 `SHA256SUMS.txt` 校验文件。
 
 ## 实测结果
 

@@ -1,7 +1,7 @@
 name: Windows release
 on:
   push:
-    tags: ['initial', 'preview-*']
+    tags: ['windows']
   workflow_dispatch:
 permissions:
   contents: read
@@ -29,7 +29,6 @@ jobs:
           ./dist/safetripwire.exe doctor
           if ($LASTEXITCODE -ne 0) { throw 'Executable smoke test failed.' }
           ./tools/package-release.ps1
-          ./tools/package-source.ps1
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
           subject-path: |
@@ -42,20 +41,15 @@ jobs:
             dist/safetripwire.exe
             dist/MCP-SafeTripwire-windows-x64.zip
             dist/SHA256SUMS.txt
-            dist/MCP-SafeTripwire-source.zip
-      - name: Publish initial preview
-        if: github.ref == 'refs/tags/initial'
+      - name: Publish Windows download
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create initial --verify-tag --title "初版 / Initial preview" --prerelease --notes-file docs/INITIAL-RELEASE.md dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/MCP-SafeTripwire-source.zip dist/SHA256SUMS.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Initial release publication failed.' }
-      - name: Prepare later draft release
-        if: startsWith(github.ref, 'refs/tags/preview-')
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "$env:GITHUB_REF_NAME" --verify-tag --title "Windows 预览版 / Windows preview" --draft --generate-notes dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/SHA256SUMS.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed.' }
+          gh release view windows *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload windows --clobber dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/SHA256SUMS.txt
+          } else {
+            gh release create windows --target "$env:GITHUB_SHA" --title "Windows 下载 / Windows download" --latest --notes-file docs/WINDOWS-DOWNLOAD.md dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/SHA256SUMS.txt
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Windows download publication failed.' }
