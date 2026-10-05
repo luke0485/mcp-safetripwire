@@ -29,7 +29,7 @@ export function isProtectedServer(info, routes = loadRoutes(defaultRoutesPath())
     } catch { return false; }
   }
   const joined = [info.command, ...(info.args ?? [])].filter(Boolean).join(' ');
-  return /mcp-tripwire|tripwire\.exe|src[\\/]cli\.js/.test(joined);
+  return /mcp-safetripwire|mcp-tripwire|tripwire\.exe|src[\\/]cli\.js/.test(joined);
 }
 
 export function describeTarget(info) {

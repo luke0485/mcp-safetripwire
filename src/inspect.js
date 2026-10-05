@@ -52,14 +52,14 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
       if (msg?.method === 'tools/call') {
         if (getPin().integrityError) {
           log('warn', 'manifest-state-rejected', { name, transport });
-          return { forward: false, error: { jsonrpc: '2.0', id: msg.id ?? null, error: { code: -32008, message: 'mcp-tripwire: manifest storage integrity check failed' } } };
+          return { forward: false, error: { jsonrpc: '2.0', id: msg.id ?? null, error: { code: -32008, message: 'mcp-safetripwire: manifest storage integrity check failed' } } };
         }
         const toolName = msg.params?.name;
         const hit = advancedDecision(getAdvanced(), name, toolName, msg.params);
         if (hit) {
           const blocked = hit.enforce && posture === 'block';
           log(blocked ? 'warn' : 'info', blocked ? 'advanced-blocked' : 'advanced-notice', { name, transport, tool: toolName, rule: hit.reason });
-          if (blocked) return { forward: false, error: { jsonrpc: '2.0', id: msg.id, error: { code: -32007, message: 'mcp-tripwire blocked request (' + hit.reason + ')' } } };
+          if (blocked) return { forward: false, error: { jsonrpc: '2.0', id: msg.id, error: { code: -32007, message: 'mcp-safetripwire blocked request (' + hit.reason + ')' } } };
         }
         if (deceptionOn && isDecoy(toolName)) {
           log('critical', 'decoy-triggered', {
@@ -73,7 +73,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
             error: {
               jsonrpc: '2.0',
               id: msg.id,
-              error: { code: -32004, message: `mcp-tripwire: "${toolName}" is a decoy and was blocked` },
+              error: { code: -32004, message: `mcp-safetripwire: "${toolName}" is a decoy and was blocked` },
             },
           };
         }
@@ -94,7 +94,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
               error: {
                 jsonrpc: '2.0',
                 id: msg.id,
-                error: { code: -32006, message: `mcp-tripwire blocked "${toolName}": argument matched ${hit.rule}` },
+                error: { code: -32006, message: `mcp-safetripwire blocked "${toolName}": argument matched ${hit.rule}` },
               },
             };
           }
@@ -111,7 +111,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
             error: {
               jsonrpc: '2.0',
               id: msg.id,
-              error: { code: -32005, message: 'mcp-tripwire: blocked a call carrying a planted secret' },
+              error: { code: -32005, message: 'mcp-safetripwire: blocked a call carrying a planted secret' },
             },
           };
         }
@@ -153,7 +153,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
             error: {
               jsonrpc: '2.0',
               id: msg.id,
-              error: { code: -32001, message: `mcp-tripwire blocked tool "${toolName}" (${reason})` },
+              error: { code: -32001, message: `mcp-safetripwire blocked tool "${toolName}" (${reason})` },
             },
           };
         }
@@ -188,14 +188,14 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
       if (invalidManifest) {
         observedTools = null;
         delete msg.result;
-        msg.error = { code: -32009, message: 'mcp-tripwire: invalid or paginated tool manifest; complete review is required' };
+        msg.error = { code: -32009, message: 'mcp-safetripwire: invalid or paginated tool manifest; complete review is required' };
         return;
       }
 
       const pin = getPin();
       if (pin.integrityError) {
         delete msg.result;
-        msg.error = { code: -32008, message: 'mcp-tripwire: manifest storage integrity check failed' };
+        msg.error = { code: -32008, message: 'mcp-safetripwire: manifest storage integrity check failed' };
         log('warn', 'manifest-state-rejected', { name, transport });
         return;
       }
@@ -226,8 +226,8 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
         msg.error = {
           code: rugPull ? -32002 : -32003,
           message: rugPull
-            ? `mcp-tripwire blocked tools/list for "${name}": manifest changed (rug-pull suspected). Review, then re-approve.`
-            : `mcp-tripwire blocked tools/list for "${name}": ${ev.action.tools.length} tool(s) with critical metadata findings.`,
+            ? `mcp-safetripwire blocked tools/list for "${name}": manifest changed (rug-pull suspected). Review, then re-approve.`
+            : `mcp-safetripwire blocked tools/list for "${name}": ${ev.action.tools.length} tool(s) with critical metadata findings.`,
         };
         log('critical', 'enforced-block', { name, transport, reason: ev.action.reason, tools: ev.action.tools });
         return;

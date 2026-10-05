@@ -314,7 +314,7 @@ export function createConsole({ listen, token, host = '127.0.0.1' }) {
       // loop and exit 0 -- indistinguishable from a healthy background process
       // that mysteriously does nothing. Fail loudly and distinguishably.
       log('critical', 'console-port-in-use', { listen, error: String(err) });
-      process.stderr.write(`mcp-tripwire: port ${listen.port} is already in use; another instance is running.\n`);
+      process.stderr.write(`mcp-safetripwire: port ${listen.port} is already in use; another instance is running.\n`);
       process.exit(9);
     }
     log('critical', 'console-error', { error: String(err) });

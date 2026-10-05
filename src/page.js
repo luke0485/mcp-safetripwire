@@ -314,7 +314,7 @@ const I18N = {
     topoEmpty: 'No channel passes through Tripwire yet -- nothing is protected.',
     tabStatus: 'Protection', tabTools: 'Channels', tabActivity: 'Audit log', tabRemote: 'Remote services',
     protection: 'Protection mode',
-    protectionHint: 'Enroll the MCP channel, restart its Agent to load the new configuration, then review and approve the tool list. Observe checks and records calls. Block rejects unapproved lists, changed tools and requests matching blocking rules. These rules cover MCP calls routed through Tripwire.',
+    protectionHint: 'Enroll the MCP channel, restart its Agent to load the new configuration, then review and approve the tool list. Observe checks and records calls. Block rejects unapproved lists, changed tools and requests matching blocking rules. These rules cover MCP calls routed through SafeTripwire.',
     observe: 'Observe', protect: 'Block',
     system: 'System', pinned: 'Locked tools', noPinned: 'None yet. Lock a tool once and any later change will be surfaced.',
     dataLocation: 'Data location',
@@ -491,7 +491,7 @@ function topologyHtml(s) {
     body += '<div class="flow ' + (r.protected ? 'protected' : 'unprotected') + '">' +
       '<span class="node">' + agentLabel(r.host) + '</span>' +
       arrow +
-      '<span class="node mid ' + (r.protected ? 'on' : 'off') + '">Tripwire</span>' +
+      '<span class="node mid ' + (r.protected ? 'on' : 'off') + '">SafeTripwire</span>' +
       arrow +
       '<span class="node">' + esc(r.name) + '</span>' +
       '<span class="flow-flags"><span class="tag ' + (r.protected ? 'calm' : 'notice') + '">' +
@@ -631,7 +631,7 @@ function advancedHtml(a) {
  return '<section class="card advanced-card"><div class="advanced-head"><div><div class="big">'+(zh?'进阶防护':'Advanced protection')+'</div><p class="muted">'+(zh?'先正常使用，再把可信行为记下来。以后发现变化时，由你选择提醒或拦截。':'Use your tools normally, then save their trusted behaviour. Choose whether later changes trigger a notice or a block.')+'</p></div></div>'+
  '<div class="baseline-status">'+(count ? (zh?'已记住 '+count+' 个工具的可信行为':'Trusted behaviour saved for '+count+' tools') : (zh?'还没有可信行为样本，先接入并批准通道，再正常使用。':'No trusted sample yet. Enroll and approve a channel, then use it normally.'))+' · '+esc(mode[a.baselineMode])+'</div>'+
  '<div class="switch" role="group" aria-label="'+(zh?'异常处理':'Response to changes')+'"><button class="'+(a.baselineMode==='warn'?'on':'')+'" onclick="setBaselineResponse(&quot;warn&quot;)">'+(zh?'异常时提醒':'Notify on changes')+'</button><button class="'+(a.baselineMode==='block'?'on':'')+'" onclick="setBaselineResponse(&quot;block&quot;)">'+(zh?'异常时拦截':'Block changes')+'</button></div>'+
- '<div class="btns"><button class="tonal" onclick="saveAdvancedUi(true)">'+(zh?'记住当前正常行为':'Save trusted behaviour')+'</button></div><p class="muted">'+(zh?'每个工具至少需要20次正常调用。只有开启阻断模式，才会拦截经过本程序的 MCP 请求。':'Each tool needs at least 20 allowed calls. Blocking requires Block mode and applies to MCP requests routed through Tripwire.')+'</p>'+
+ '<div class="btns"><button class="tonal" onclick="saveAdvancedUi(true)">'+(zh?'记住当前正常行为':'Save trusted behaviour')+'</button></div><p class="muted">'+(zh?'每个工具至少需要20次正常调用。只有开启阻断模式，才会拦截经过本程序的 MCP 请求。':'Each tool needs at least 20 allowed calls. Blocking requires Block mode and applies to MCP requests routed through SafeTripwire.')+'</p>'+
  '<details class="advanced-details"><summary>'+(zh?'自定义黑名单和详细设置':'Custom blocklists and detailed settings')+'</summary><div class="advanced-fields">'+
  '<label class="advanced-field"><span>'+(zh?'不允许使用的工具':'Tools to block')+'</span><textarea id="deny-tools" placeholder="'+(zh?'每行填写一个工具名':'One tool name per line')+'">'+esc(a.blockedTools.join('\\n'))+'</textarea><small>'+(zh?'不知道工具名可以留空，不影响已有防护。':'Leave empty if unsure. Existing protection still applies.')+'</small></label>'+
  '<label class="advanced-field"><span>'+(zh?'不允许访问的域名':'Domains to block')+'</span><textarea id="deny-domains" placeholder="example.com">'+esc(a.blockedDestinations.join('\\n'))+'</textarea><small>'+(zh?'每行一个域名，自动包含子域名。':'One domain per line; subdomains are included.')+'</small></label></div>'+
@@ -802,7 +802,7 @@ window.detectSelectedAgent = async () => {
     result.innerHTML = '<strong>' + esc(heading) + '</strong><div class="detect-path">' + esc(detected.path) + '</div>' +
       (detected.servers?.length ? '<table><tbody>' + detected.servers.map(server => '<tr><td>' + esc(server.name) + (server.scope === 'project' ? '<div class="muted detect-path">' + esc(server.path) + '</div>' : '') + '</td><td>' + esc(server.kind === 'http' ? t('remoteService') : server.kind === 'stdio' ? t('localProgram') : t('unknown')) + '</td><td>' +
         (server.wrapped ? '<span class="tag calm">' + esc(t('protected')) + '</span>' : ['http', 'stdio'].includes(server.kind) ? '<button class="btn-sm" onclick="doWrap(' + esc(JSON.stringify(server.hostId || id)) + ',' + esc(JSON.stringify(server.name)) + ')">' + esc(t('enableProtection')) + '</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '') +
-      (detected.supported === false ? '<p class="muted">' + (zh ? '如果它支持自定义 MCP：本机配置可在下方指定文件；远程服务可添加 HTTP 中转地址，再填回 Agent。接入完成前，这个产品不会受到保护。没有 MCP 设置的产品暂时无法接入。' : 'If this product supports custom MCP, select its local configuration file below, or add an HTTP relay and paste the relay URL into the Agent. Protection only applies after traffic is routed through Tripwire. Products without MCP settings cannot be connected yet.') + '</p><button class="btn-sm" onclick="openRemoteSetup()">' + (zh ? '设置 HTTP MCP 中转' : 'Set up HTTP MCP relay') + '</button>' : '');
+      (detected.supported === false ? '<p class="muted">' + (zh ? '如果它支持自定义 MCP：本机配置可在下方指定文件；远程服务可添加 HTTP 中转地址，再填回 Agent。接入完成前，这个产品不会受到保护。没有 MCP 设置的产品暂时无法接入。' : 'If this product supports custom MCP, select its local configuration file below, or add an HTTP relay and paste the relay URL into the Agent. Protection only applies after traffic is routed through SafeTripwire. Products without MCP settings cannot be connected yet.') + '</p><button class="btn-sm" onclick="openRemoteSetup()">' + (zh ? '设置 HTTP MCP 中转' : 'Set up HTTP MCP relay') + '</button>' : '');
   } catch (error) {
     if (version === agentDetectVersion) result.textContent = t('loadFailed') + error.message;
   }

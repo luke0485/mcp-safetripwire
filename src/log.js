@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, statSync, renameSync, rmSync, readFileSync, openSync, readSync, closeSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, statSync, renameSync, rmSync, readFileSync, openSync, readSync, closeSync, writeFileSync, unlinkSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname } from 'node:path';
 
@@ -11,7 +11,7 @@ import { dirname } from 'node:path';
 // `silent` exists so tests and embedded use can suppress console output while
 // the JSONL audit trail still records everything.
 const LEVELS = { debug: 10, info: 20, warn: 30, critical: 40, silent: 100 };
-const PREFIX = 'mcp-tripwire';
+const PREFIX = 'mcp-safetripwire';
 
 // Keep the audit trail bounded. Without this it grows without limit, which is
 // both a disk problem and a slow read for the console's activity view.
@@ -56,16 +56,19 @@ function seedFromFile(path) {
 // forks the chain even when nobody modified a record. Serialize the append
 // and read the current head while holding this cross-process lock.
 const lockWait = new Int32Array(new SharedArrayBuffer(4));
+function removeLock(path) {
+  try { unlinkSync(path); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+}
 export function acquireLogLock(path) {
   const lock = path + '.lock';
   for (let attempt = 0; attempt < 500; attempt++) {
     try {
       const fd = openSync(lock, 'wx');
       try { writeFileSync(fd, String(process.pid)); } catch (err) {
-        closeSync(fd); rmSync(lock, { force: true }); throw err;
+        closeSync(fd); removeLock(lock); throw err;
       }
       closeSync(fd);
-      return () => rmSync(lock, { force: true });
+      return () => removeLock(lock);
     } catch (err) {
       if (!['EEXIST', 'EPERM', 'EACCES', 'EBUSY'].includes(err.code)) throw err;
       // Recover only an old lock whose owner is demonstrably no longer alive.
@@ -78,13 +81,13 @@ export function acquireLogLock(path) {
           const pid = Number(readFileSync(lock, 'utf8'));
           if (Date.now() - statSync(lock).mtimeMs > 30000 && Number.isInteger(pid) && pid > 0) {
             try { process.kill(pid, 0); } catch (probe) {
-              if (probe.code === 'ESRCH') rmSync(lock, { force: true });
+              if (probe.code === 'ESRCH') removeLock(lock);
             }
           }
         }
       } catch { /* another writer may have released the lock */ }
       finally {
-        if (recoveryFd !== undefined) { closeSync(recoveryFd); rmSync(lock + '.recovery', { force: true }); }
+        if (recoveryFd !== undefined) { closeSync(recoveryFd); removeLock(lock + '.recovery'); }
       }
       Atomics.wait(lockWait, 0, 0, 10);
     }

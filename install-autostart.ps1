@@ -14,7 +14,7 @@ param([switch]$Remove)
 $ErrorActionPreference = 'Stop'
 
 $Startup = [Environment]::GetFolderPath('Startup')
-$Link = Join-Path $Startup 'MCP Tripwire proxy.lnk'
+$Link = Join-Path $Startup 'MCP SafeTripwire proxy.lnk'
 
 if ($Remove) {
     if (Test-Path $Link) {
@@ -38,7 +38,7 @@ $shortcut.TargetPath = Join-Path $env:SystemRoot 'System32\cmd.exe'
 $shortcut.Arguments = '/c "' + $Launcher + '" serve'
 $shortcut.WorkingDirectory = $ProjectDir
 $shortcut.WindowStyle = 7  # minimized
-$shortcut.Description = 'MCP Tripwire HTTP proxy (autostart)'
+$shortcut.Description = 'MCP SafeTripwire HTTP proxy (autostart)'
 $shortcut.Save()
 
 Write-Host "Autostart installed: $Link"

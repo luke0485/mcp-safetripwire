@@ -13,9 +13,9 @@ The Windows workflow tests and builds the executable and portable ZIP. The expli
 3. Push the tag. Check the Windows build result in Actions.
 4. Download and test the assets on a clean Windows x64 machine without Node installed.
 5. Review and publish the draft release.
-6. Add a README download button linking to `https://github.com/OWNER/REPO/releases/latest/download/tripwire.exe` and another to `https://github.com/OWNER/REPO/releases/latest/download/MCP-Tripwire-windows-x64.zip`. Replace OWNER/REPO with the actual repository; these are templates, not live downloads yet.
+6. Add a README download button linking to `https://github.com/OWNER/REPO/releases/latest/download/tripwire.exe` and another to `https://github.com/OWNER/REPO/releases/latest/download/MCP-SafeTripwire-windows-x64.zip`. Replace OWNER/REPO with the actual repository; these are templates, not live downloads yet.
 
-Double-clicking the standalone EXE opens the console. For the tray and desktop shortcut, extract the portable ZIP and double-click `Start MCP Tripwire.cmd`. It includes `dist/tripwire.exe`, the tray scripts, and icons; users do not need Node or npm. Extract the whole ZIP before launching.
+Double-clicking the standalone EXE opens the console. For the tray and desktop shortcut, extract the portable ZIP and double-click `Start MCP SafeTripwire.cmd`. It includes `dist/tripwire.exe`, the tray scripts, and icons; users do not need Node or npm. Extract the whole ZIP before launching.
 
 ## Local build
 

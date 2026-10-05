@@ -76,8 +76,8 @@ Coverage applies to routed MCP channels. Paginated tool manifests are currently 
 
 ## 快速上手
 
-1. 在本仓库 **Releases** 下载 `MCP-Tripwire-windows-x64.zip`。如果尚无 Release，请先按下方步骤从源码运行。
-2. 完整解压到固定文件夹，双击 `Start MCP Tripwire.cmd`。无需另外安装 Node.js。
+1. 在本仓库 **Releases** 下载 `MCP-SafeTripwire-windows-x64.zip`。如果尚无 Release，请先按下方步骤从源码运行。
+2. 完整解压到固定文件夹，双击 `Start MCP SafeTripwire.cmd`。无需另外安装 Node.js。
 3. 点击添加，选择 Agent，检查识别到的 MCP 通道，再接入需要保护的通道。自动改写配置前会保留备份。
 4. 重启对应 Agent，让配置生效；核对工具清单并批准可信通道。
 5. 先使用 **观察模式**了解正常调用，随后按需要启用 **阻断模式**。

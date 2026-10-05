@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { encode, createLineDecoder } from './rpc.js';
 import { killTree } from './kill.js';
 
-const CLIENT_INFO = { name: 'mcp-tripwire', version: '0.1.0' };
+const CLIENT_INFO = { name: 'mcp-safetripwire', version: '0.1.0' };
 const PROTOCOL_VERSION = '2025-06-18';
 
 // One-shot, non-interactive capture: spawn a server, complete the MCP

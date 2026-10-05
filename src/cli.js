@@ -21,21 +21,21 @@ import { setLogFile } from './log.js';
 
 const CLI_PATH = isSea() ? process.execPath : join(selfDir(), 'cli.js');
 
-const USAGE = `mcp-tripwire — transparent, LLM-free security broker for the Model Context Protocol
+const USAGE = `mcp-safetripwire — transparent, LLM-free security broker for the Model Context Protocol
 
-  mcp-tripwire wrap    [--name N] [--enforce warn|strip|block] [--policy P] [--log L] [--state S] [--verbose] -- <cmd> [args...]
-  mcp-tripwire serve   [--routes R] [--listen host:port] [--state S] [--log L]
-  mcp-tripwire console [--port N] [--no-open] [--browser] [--token-file P] [--log L]
-  mcp-tripwire bridge  [--name N] [--listen host:port] [--upstream host:port] [--allow a,b] [--protect] [--log L]
-  mcp-tripwire protect-all [--write] [--enforce M] [--listen host:port]
-  mcp-tripwire watch
-  mcp-tripwire scan    [--name N] [--json] -- <cmd> [args...]
-  mcp-tripwire approve [--name N] [--state S] -- <cmd> [args...]
-  mcp-tripwire install [--host codex|claude-desktop|cursor] [--server N] [--write] [--enforce M] [--listen host:port]
-  mcp-tripwire doctor
+  mcp-safetripwire wrap    [--name N] [--enforce warn|strip|block] [--policy P] [--log L] [--state S] [--verbose] -- <cmd> [args...]
+  mcp-safetripwire serve   [--routes R] [--listen host:port] [--state S] [--log L]
+  mcp-safetripwire console [--port N] [--no-open] [--browser] [--token-file P] [--log L]
+  mcp-safetripwire bridge  [--name N] [--listen host:port] [--upstream host:port] [--allow a,b] [--protect] [--log L]
+  mcp-safetripwire protect-all [--write] [--enforce M] [--listen host:port]
+  mcp-safetripwire watch
+  mcp-safetripwire scan    [--name N] [--json] -- <cmd> [args...]
+  mcp-safetripwire approve [--name N] [--state S] -- <cmd> [args...]
+  mcp-safetripwire install [--host codex|claude-desktop|cursor] [--server N] [--write] [--enforce M] [--listen host:port]
+  mcp-safetripwire doctor
 
 Commands:
-  wrap      Run a stdio MCP server behind mcp-tripwire (put this in the host's config).
+  wrap      Run a stdio MCP server behind mcp-safetripwire (put this in the host's config).
   serve     Run the local HTTP reverse proxy for url-based (remote) MCP servers.
   console   Open the local web console (graphical front end) in your browser.
   bridge    Watch a raw-TCP MCP channel in audit-only mode: it records every
@@ -46,7 +46,7 @@ Commands:
   doctor    Report environment, state, and which host configs were detected.
 
 MCP connection types:
-  stdio            -> intercepted by 'wrap' (the host launches mcp-tripwire).
+  stdio            -> intercepted by 'wrap' (the host launches mcp-safetripwire).
   Streamable HTTP  -> intercepted by 'serve' (the host's url is rewritten to localhost).
   legacy HTTP+SSE  -> also handled by 'serve' (the endpoint event is rewritten).
   raw TCP + NUL-delimited JSON (e.g. Blender's MCP add-on) -> observed by 'bridge' (audit only).
@@ -142,7 +142,7 @@ switch (command) {
     const routes = loadRoutes(routesPath);
     routes.listen = listenFromOpts(opts);
     if (Object.keys(routes.servers).length === 0) {
-      die(`serve: no servers configured in ${routesPath}\n(add one with: mcp-tripwire install --host <host> --server <name> --write)`);
+      die(`serve: no servers configured in ${routesPath}\n(add one with: mcp-safetripwire install --host <host> --server <name> --write)`);
     }
     setLogFile(typeof opts.log === 'string' ? opts.log : defaultLogPath());
     createHttpProxy({
@@ -154,7 +154,7 @@ switch (command) {
       getRoutes: () => loadRoutes(routesPath),
     });
     process.stderr.write(
-      `mcp-tripwire serving ${Object.keys(routes.servers).length} route(s) on http://${routes.listen.host}:${routes.listen.port}\n` +
+      `mcp-safetripwire serving ${Object.keys(routes.servers).length} route(s) on http://${routes.listen.host}:${routes.listen.port}\n` +
       `routes: ${Object.keys(routes.servers).join(', ')}\n`,
     );
     break;
@@ -168,7 +168,7 @@ switch (command) {
     createConsole({ listen, token });
     const url = `http://127.0.0.1:${listen.port}/?token=${token}`;
     process.stderr.write(
-      `\nmcp-tripwire console\n  ${url}\n\n` +
+      `\nmcp-safetripwire console\n  ${url}\n\n` +
       `  The token is handed out once, then kept in an HttpOnly cookie.\n` +
       `  It is never put on a command line (process lists are readable by other\n` +
       `  programs running as you).` +
@@ -191,7 +191,7 @@ switch (command) {
     setLogFile(typeof opts.log === 'string' ? opts.log : defaultLogPath());
     createTcpBridge({ name, listen, upstream, allowlist, protect });
     process.stderr.write(
-      `\nmcp-tripwire bridge —— 只记录，不拦截\n` +
+      `\nmcp-safetripwire bridge —— 只记录，不拦截\n` +
       `  监视地址 : ${listen.host}:${listen.port}\n` +
       `  转发到   : ${upstream.host}:${upstream.port}\n\n` +
       `  把客户端的连接端口从 ${upstream.port} 改成 ${listen.port} 就开始记录。\n` +
@@ -285,7 +285,7 @@ switch (command) {
   case 'install': {
     const hostId = typeof opts.host === 'string' ? opts.host : null;
     const host = hostId ? findHost(hostId) : knownHosts().find((h) => listServers(h).length > 0);
-    if (!host) die(`install: no host config found${hostId ? ` for "${hostId}"` : ''}. Try: mcp-tripwire doctor`);
+    if (!host) die(`install: no host config found${hostId ? ` for "${hostId}"` : ''}. Try: mcp-safetripwire doctor`);
     const servers = listServers(host);
     if (servers.length === 0) die(`install: no MCP servers declared in ${host.path}`);
 
@@ -312,7 +312,7 @@ switch (command) {
       process.stdout.write(`before : url = ${plan.original.url}\n`);
       process.stdout.write(`after  : url = ${plan.wrapped.url}\n\n`);
       process.stdout.write(`remote servers are intercepted by a local proxy, not by wrapping a command.\n`);
-      process.stdout.write(`after applying, run:\n  mcp-tripwire serve\n\n`);
+      process.stdout.write(`after applying, run:\n  mcp-safetripwire serve\n\n`);
     } else {
       process.stdout.write(`before : ${plan.original.command} ${plan.original.args.join(' ')}\n`);
       process.stdout.write(`after  : ${plan.wrapped.command} ${plan.wrapped.args.join(' ')}\n\n`);
@@ -320,7 +320,7 @@ switch (command) {
 
     if (!opts.write) {
       process.stdout.write('dry run — nothing written. To apply:\n');
-      process.stdout.write(`  mcp-tripwire install --host ${host.id} --server ${chosen} --write\n\n`);
+      process.stdout.write(`  mcp-safetripwire install --host ${host.id} --server ${chosen} --write\n\n`);
       process.stdout.write(`or paste this yourself into ${host.path}:\n\n${renderSnippet({ host, serverName: chosen, wrapped: plan.wrapped })}\n`);
       process.exit(0);
     }
@@ -340,7 +340,7 @@ switch (command) {
       };
       saveRoutes(routesPath, routes);
       process.stdout.write(`route added to ${routesPath}\n`);
-      process.stdout.write(`now run: mcp-tripwire serve\n`);
+      process.stdout.write(`now run: mcp-safetripwire serve\n`);
     } else {
       process.stdout.write(`restart ${host.label} to pick it up.\n`);
     }
@@ -349,7 +349,7 @@ switch (command) {
   }
 
   case 'doctor': {
-    process.stdout.write(`\nmcp-tripwire doctor\n`);
+    process.stdout.write(`\nmcp-safetripwire doctor\n`);
     process.stdout.write(`  platform : ${platform()} ${release()}\n`);
     process.stdout.write(`  node     : ${process.version} (${process.execPath})\n`);
     process.stdout.write(`  cli      : ${CLI_PATH}\n`);

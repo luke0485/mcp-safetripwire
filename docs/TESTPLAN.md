@@ -37,7 +37,7 @@ Tripwire 的完整链路，验证它**能拦、不误伤、可回滚**，并为�
 ### Phase 0 — 环境侦察（只读）
 
 ```bash
-cd path/to/mcp-tripwire
+cd path/to/mcp-safetripwire
 node src/cli.js doctor
 ```
 
@@ -205,9 +205,9 @@ url 型远程服务器的拦截走 `serve` 反代，代码已实现、帧层已�
 但**尚未实机联调**。要验证它，需要一台可连的真实或自建 HTTP MCP 服务器：
 
 1. 用 HTTP 型服务器（或本地自建一个）在宿主里声明 `url`。
-2. `mcp-tripwire install --host <host> --server <name>`（预演）→ 检查 `after` 的 url
+2. `mcp-safetripwire install --host <host> --server <name>`（预演）→ 检查 `after` 的 url
    是否指向 `http://127.0.0.1:8788/<name>/...`。
-3. `--write` 应用，然后 `mcp-tripwire serve`。
+3. `--write` 应用，然后 `mcp-safetripwire serve`。
 4. 观察 `audit.jsonl`：应出现 `transport: "http"` 的 `tools-list` / `tools-call`，
    且哈希固定、静态发现、策略拦截三条链路与 stdio 表现**完全一致**。
 5. 旧版 SSE 服务器额外检查：审计里不应出现任何指向真实上游的直连（`endpoint` 已被改写）。

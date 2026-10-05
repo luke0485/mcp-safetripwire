@@ -6,6 +6,6 @@ $paths = foreach ($name in $allowed) {
     $candidate = Join-Path $projectRoot $name
     if (Test-Path -LiteralPath $candidate) { $candidate }
 }
-$outputZip = Join-Path $projectRoot 'dist\MCP-Tripwire-source.zip'
+$outputZip = Join-Path $projectRoot 'dist\MCP-SafeTripwire-source.zip'
 Compress-Archive -LiteralPath $paths -DestinationPath $outputZip -Force
 Write-Host "Source archive: $outputZip"

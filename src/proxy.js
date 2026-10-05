@@ -12,7 +12,7 @@ import { isJsonRpc } from './sse.js';
 // never knows the difference, and we never need OS privileges or per-host
 // plugins to sit in the middle.
 //
-//   host  --stdio-->  [ mcp-tripwire ]  --stdio-->  real MCP server
+//   host  --stdio-->  [ mcp-safetripwire ]  --stdio-->  real MCP server
 //
 // `onHostMessage` may veto a message (return { forward: false, error }).
 // `onServerMessage` observes/mutates responses; it is told which method the
@@ -99,7 +99,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
     } catch (err) {
       log('critical', 'inspector-error', { name, side: 'server', error: String(err) });
       delete msg.result;
-      msg.error = { code: -32603, message: 'mcp-tripwire inspection failed' };
+      msg.error = { code: -32603, message: 'mcp-safetripwire inspection failed' };
     }
   };
 
@@ -124,7 +124,7 @@ export function createProxy({ name, command, args, onHostMessage, onServerMessag
           writeDownstream(verdict.error ?? {
             jsonrpc: '2.0',
             id: msg.id,
-            error: { code: -32001, message: 'Blocked by mcp-tripwire' },
+            error: { code: -32001, message: 'Blocked by mcp-safetripwire' },
           });
         }
         return;

@@ -11,7 +11,7 @@
   },
   "keywords": ["mcp", "model-context-protocol", "mcp-security", "tool-poisoning", "ai-agent", "windows", "audit", "luke0485"],
   "bin": {
-    "mcp-tripwire": "./src/cli.js"
+    "mcp-safetripwire": "./src/cli.js"
   },
   "engines": {
     "node": ">=18"

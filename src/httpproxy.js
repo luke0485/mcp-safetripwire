@@ -108,12 +108,12 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
 
   const server = createServer((req, res) => {
     if (activeRequests >= MAX_HTTP_CONNECTIONS) {
-      res.writeHead(503); res.end('mcp-tripwire: active request limit reached\n'); return;
+      res.writeHead(503); res.end('mcp-safetripwire: active request limit reached\n'); return;
     }
     activeRequests++;
     res.once('close', () => { activeRequests--; });
     if (!proxyOriginAllowed(req, server.address()?.port)) {
-      res.writeHead(403); res.end('mcp-tripwire: forbidden host or origin\n'); return;
+      res.writeHead(403); res.end('mcp-safetripwire: forbidden host or origin\n'); return;
     }
     if (!['GET', 'POST', 'DELETE'].includes(req.method)) {
       res.writeHead(405, { allow: 'GET, POST, DELETE' }); res.end(); return;
@@ -121,13 +121,13 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
     const activeRoutes = getRoutes?.() ?? routes;
     if (activeRoutes.integrityError) {
       res.writeHead(503, { 'content-type': 'text/plain' });
-      res.end('mcp-tripwire: remote configuration rejected\n');
+      res.end('mcp-safetripwire: remote configuration rejected\n');
       return;
     }
     const route = resolveRoute(req.url, activeRoutes);
     if (!route) {
       res.writeHead(404, { 'content-type': 'text/plain' });
-      res.end(`mcp-tripwire: no route for ${req.url}\n`);
+      res.end(`mcp-safetripwire: no route for ${req.url}\n`);
       return;
     }
 
@@ -137,14 +137,14 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
       if (!['http:', 'https:'].includes(upstream.protocol) || upstream.username || upstream.password) throw new Error('Invalid upstream');
     } catch {
       res.writeHead(500, { 'content-type': 'text/plain' });
-      res.end('mcp-tripwire: invalid upstream url in routes.json\n');
+      res.end('mcp-safetripwire: invalid upstream url in routes.json\n');
       return;
     }
 
     const query = new URL(req.url, 'http://localhost').searchParams;
     const session = req.headers['mcp-session-id'] ?? query.get('sessionId') ?? query.get('session_id') ?? '';
     if (typeof session !== 'string' || session.length > 256 || /[\x00-\x20\x7f]/.test(session)) {
-      res.writeHead(400); res.end('mcp-tripwire: invalid session id\n'); return;
+      res.writeHead(400); res.end('mcp-safetripwire: invalid session id\n'); return;
     }
     const sessionKey = (id) => JSON.stringify([route.name, route.entry.upstream, id]);
     let key = sessionKey(session);
@@ -155,11 +155,11 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
     const signature = JSON.stringify([route.entry.policy, route.entry.state, route.entry.posture]);
     let entry = sessions.get(key);
     if (entry && entry.signature !== signature) {
-      if (entry.active) { res.writeHead(409); res.end('mcp-tripwire: route changed; reconnect\n'); return; }
+      if (entry.active) { res.writeHead(409); res.end('mcp-safetripwire: route changed; reconnect\n'); return; }
       sessions.delete(key); entry = null;
     }
     if (!entry) {
-      if (sessions.size >= MAX_HTTP_SESSIONS) { res.writeHead(503); res.end('mcp-tripwire: session limit reached\n'); return; }
+      if (sessions.size >= MAX_HTTP_SESSIONS) { res.writeHead(503); res.end('mcp-safetripwire: session limit reached\n'); return; }
       entry = { pending: new Map(), inspector: inspectorFor(route.name, route.entry, session), usedAt: Date.now(), active: 0, signature };
       sessions.set(key, entry);
     }
@@ -214,7 +214,7 @@ function readBody(req, res, ctx, fn) {
       rejected = true;
       chunks.length = 0;
       res.writeHead(413, { 'content-type': 'text/plain' });
-      res.end('mcp-tripwire: request body exceeds 8 MiB\n');
+      res.end('mcp-safetripwire: request body exceeds 8 MiB\n');
       return;
     }
     chunks.push(c);
@@ -256,7 +256,7 @@ function handlePost(req, res, ctx) {
     if (msg.id !== undefined && typeof msg.method === 'string') {
       const id = JSON.stringify(msg.id);
       if (pending.has(id) || pending.size >= MAX_PENDING_REQUESTS) {
-        res.writeHead(409); res.end('mcp-tripwire: duplicate id or outstanding request limit\n'); return;
+        res.writeHead(409); res.end('mcp-safetripwire: duplicate id or outstanding request limit\n'); return;
       }
       pending.set(id, msg.method);
     }
@@ -290,7 +290,7 @@ function handlePassthrough(req, res, ctx) {
   readBody(req, res, ctx, (buf) => {
     const headers = forwardHeaders(req.headers, ctx.upstream);
     if (buf.length) headers['content-length'] = String(buf.length);
-    if (buf.length) { res.writeHead(400); res.end('mcp-tripwire: DELETE body is not supported\n'); return; }
+    if (buf.length) { res.writeHead(400); res.end('mcp-safetripwire: DELETE body is not supported\n'); return; }
     forward(req, res, ctx,
       ctx.upstream,
       { method: req.method, path: ctx.targetPath, headers, body: buf.length ? buf : undefined },
@@ -405,7 +405,7 @@ function inspectResponse(ctx, msg, method) {
   } catch (err) {
     log('critical', 'inspector-error', { name: ctx.name, side: 'server', error: String(err) });
     delete msg.result;
-    msg.error = { code: -32603, message: 'mcp-tripwire inspection failed' };
+    msg.error = { code: -32603, message: 'mcp-safetripwire inspection failed' };
   }
 }
 
@@ -420,7 +420,7 @@ function fail(res, ctx, err) {
   res.end(JSON.stringify({
     jsonrpc: '2.0',
     id: null,
-    error: { code: -32603, message: `mcp-tripwire upstream error: ${err.message}` },
+    error: { code: -32603, message: `mcp-safetripwire upstream error: ${err.message}` },
   }));
 }
 

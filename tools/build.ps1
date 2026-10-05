@@ -10,7 +10,7 @@
 #   powershell -ExecutionPolicy Bypass -File .\tools\build.ps1
 #   powershell -ExecutionPolicy Bypass -File .\tools\build.ps1 -SkipInstall
 
-param([switch]$SkipInstall, [string]$OutputName = 'tripwire.exe')
+param([switch]$SkipInstall, [string]$OutputName = 'safetripwire.exe')
 
 $ErrorActionPreference = 'Stop'
 if ($OutputName -notmatch '^[A-Za-z0-9._-]+\.exe$') { throw 'OutputName must be an exe file name.' }

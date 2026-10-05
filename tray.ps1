@@ -145,7 +145,7 @@ Trace("  root=$root")
 
 # Prefer the packaged single-file build: then the shortcut keeps working even on
 # a machine without Node installed.
-$packaged = Join-Path $root 'dist\tripwire.exe'
+$packaged = Join-Path $root 'dist\safetripwire.exe'
 if (Test-Path -LiteralPath $packaged) {
     $launchFile = $packaged
     $launchArgs = 'console --port {0} --no-open --token-file "{1}"' -f $Port, $tokenFile

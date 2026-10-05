@@ -1,5 +1,5 @@
 @echo off
-rem MCP Tripwire launcher.
+rem MCP SafeTripwire launcher.
 rem   tripwire            -> interactive menu (for the desktop shortcut)
 rem   tripwire <command>  -> pass straight through to the CLI
 setlocal

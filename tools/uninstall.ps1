@@ -21,7 +21,7 @@ if ([string]::IsNullOrEmpty($ProjectDir)) { $ProjectDir = (Get-Location).Path }
 $dataDir = Join-Path $env:USERPROFILE '.mcp-tripwire'
 $Desktop = [Environment]::GetFolderPath('Desktop')
 
-Write-Host 'MCP Tripwire -- full uninstall'
+Write-Host 'MCP SafeTripwire -- full uninstall'
 Write-Host ''
 
 # 1) restore host configs from the newest backup of each

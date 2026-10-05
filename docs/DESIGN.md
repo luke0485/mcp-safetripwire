@@ -1,4 +1,4 @@
-# MCP Tripwire 设计文档
+# MCP SafeTripwire 设计文档
 
 ## 1. 定位
 
@@ -14,7 +14,7 @@
 MCP 规范定义两种标准传输（另允许自定义），它们的**配置形态不同，拦截方式也不同**：
 
 ```
-stdio   : 宿主 --stdio--> [ mcp-tripwire wrap ] --stdio--> 真实子进程
+stdio   : 宿主 --stdio--> [ mcp-safetripwire wrap ] --stdio--> 真实子进程
           （宿主启动的那一行被改写；不需要任何特权）
 
 HTTP    : 宿主 --http--> http://127.0.0.1:8788/<name>/... --http--> https://real/mcp
@@ -35,7 +35,7 @@ HTTP    : 宿主 --http--> http://127.0.0.1:8788/<name>/... --http--> https://re
 宿主
  │  强制所有 MCP 流量经过：stdio 包住子进程 / HTTP 改写 url 到本地
  ▼
-[ mcp-tripwire ]
+[ mcp-safetripwire ]
  ├─ 传输层    proxy.js（stdio）  ·  httpproxy.js（Streamable HTTP / 旧版 SSE）
  ├─ 决策内核  inspect.js —— 所有传输共用，保证判定一致
  │     ├─ 完整性层  manifest 哈希固定，工具面变更即拦截（TOFU / lockfile 思路）

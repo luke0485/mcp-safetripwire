@@ -26,9 +26,9 @@ function parseConfig(text, format = 'json') {
 // MCP servers come in two connection shapes, and they need different handling:
 //
 //   stdio  — declared as `command` + `args`. The host launches the process, so
-//            we wrap by making the launch line point at mcp-tripwire.
+//            we wrap by making the launch line point at mcp-safetripwire.
 //   HTTP   — declared as `url`. There is no process to launch, so we rewrite
-//            the url to a local address and forward from `mcp-tripwire serve`.
+//            the url to a local address and forward from `mcp-safetripwire serve`.
 
 export const AGENT_CATALOG = [
   { id: 'pi', vendor: 'Pi', label: 'Pi Agent', icon: 'pi', format: 'json' },
@@ -285,7 +285,7 @@ export function wrappedCommand({ launcher, name, command, args, statePath, logPa
   if (enforce) a.push('--enforce', enforce);
   a.push('--', command, ...args);
   // Launch through the current Node executable so the wrap does not depend on
-  // mcp-tripwire being on PATH.
+  // mcp-safetripwire being on PATH.
   return { command: launcher.command, args: a };
 }
 
