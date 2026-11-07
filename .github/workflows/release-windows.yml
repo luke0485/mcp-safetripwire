@@ -33,6 +33,7 @@ jobs:
           ./tools/package-release.ps1
           ./tools/build-installer.ps1
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        continue-on-error: true
         with:
           subject-path: |
             dist/safetripwire.exe
@@ -53,6 +54,7 @@ jobs:
         run: |
           gh release view windows *> $null
           if ($LASTEXITCODE -eq 0) {
+            gh release edit windows --target "$env:GITHUB_SHA" --notes-file docs/WINDOWS-DOWNLOAD.md
             gh release upload windows --clobber dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/MCP-SafeTripwire-Setup.exe dist/SHA256SUMS.txt
           } else {
             gh release create windows --target "$env:GITHUB_SHA" --title "Windows 下载 / Windows download" --latest --notes-file docs/WINDOWS-DOWNLOAD.md dist/safetripwire.exe dist/MCP-SafeTripwire-windows-x64.zip dist/MCP-SafeTripwire-Setup.exe dist/SHA256SUMS.txt
