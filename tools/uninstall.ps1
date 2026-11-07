@@ -44,21 +44,28 @@ foreach ($cfg in Get-HostConfigs) {
     }
     $newest = $backups[$backups.Count - 1]
     try {
+        # Keep the current file too: it may contain edits made after enrolment.
+        $safety = $cfg + '.tripwire-before-uninstall-' + [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+        Copy-Item -LiteralPath $cfg -Destination $safety -Force -ErrorAction SilentlyContinue
         Copy-Item -LiteralPath $newest.FullName -Destination $cfg -Force -ErrorAction Stop
-        Write-Host ("  restored " + $cfg + " from " + $newest.Name)
+        Write-Host ("  restored " + $cfg + " from " + $newest.Name + " (previous copy: " + $safety + ")")
     } catch {
         Write-Host ("  FAILED to restore " + $cfg + ": " + $_.Exception.Message)
     }
 }
 
-# 2) clear relay routes
+# 2) clear relay routes. Delete the data file AND its HMAC key: writing an
+# unsigned empty file while keeping the key makes every later load fail closed
+# and prevents a re-install from saving new routes.
 $routes = Join-Path $dataDir 'routes.json'
-if (Test-Path -LiteralPath $routes) {
-    try {
-        Set-Content -LiteralPath $routes -Value '{ "listen": { "host": "127.0.0.1", "port": 8788 }, "servers": {} }' -Encoding utf8
-        Write-Host '  cleared relay routes'
-    } catch {
-        Write-Host ('  FAILED to clear routes: ' + $_.Exception.Message)
+foreach ($file in @($routes, $routes + '.key', $routes + '.lock')) {
+    if (Test-Path -LiteralPath $file) {
+        try {
+            Remove-Item -LiteralPath $file -Force -ErrorAction Stop
+            Write-Host ("  removed " + $file)
+        } catch {
+            Write-Host ('  FAILED to remove ' + $file + ': ' + $_.Exception.Message)
+        }
     }
 }
 
@@ -70,10 +77,13 @@ foreach ($name in @('MCP SafeTripwire.lnk', 'MCP Tripwire.lnk', 'MCP Tripwire (m
         Write-Host ("  removed shortcut " + $name)
     }
 }
-$startup = Join-Path ([Environment]::GetFolderPath('Startup')) 'MCP Tripwire proxy.lnk'
-if (Test-Path -LiteralPath $startup) {
-    Remove-Item -LiteralPath $startup -Force -ErrorAction SilentlyContinue
-    Write-Host '  removed autostart entry'
+$startupNames = @('MCP SafeTripwire proxy.lnk', 'MCP Tripwire proxy.lnk')
+foreach ($name in $startupNames) {
+    $startup = Join-Path ([Environment]::GetFolderPath('Startup')) $name
+    if (Test-Path -LiteralPath $startup) {
+        Remove-Item -LiteralPath $startup -Force -ErrorAction SilentlyContinue
+        Write-Host ("  removed autostart entry " + $name)
+    }
 }
 
 # 4) optional state purge

@@ -1,10 +1,11 @@
 # Agent 适配清单（2026-09-30）
 
-目录包含 57 个条目（56 个产品及自定义入口）与离线图标；其中 30 个默认配置适配器。产品名录、图标、自动接入是不同层级。未公开配置或云端服务不等于本机可拦截。指定配置文件入口支持 JSON/JSONC/TOML 中已识别的 MCP 结构，识别只保存位置、不改配置；纳管操作才会备份并改写对应 MCP 条目。
+目录包含 58 个条目（57 个产品及自定义入口）与离线图标（新收录且暂无图标的条目使用首字母占位）；其中 30 个默认配置适配器。产品名录、图标、自动接入是不同层级。未公开配置或云端服务不等于本机可拦截。指定配置文件入口支持 JSON/JSONC/TOML 中已识别的 MCP 结构，识别只保存位置、不改配置；纳管操作才会备份并改写对应 MCP 条目。
 
 |厂商|产品|默认识别配置|图标|
 |---|---|---|---|
 |OpenAI|Codex|~\.codex\config.toml|离线产品图标|
+|DeepSeek|DeepSeek Harness|指定配置 / 手动接入|首字母占位|
 |Anysphere|Cursor|~\.cursor\mcp.json|离线产品图标|
 |Anthropic|Claude Desktop|~\AppData\Roaming\Claude\claude_desktop_config.json|离线产品图标|
 |ByteDance|TRAE CLI|~\.trae\traecli.toml|离线产品图标|

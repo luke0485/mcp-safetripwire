@@ -1,4 +1,4 @@
-import { appendFileSync, mkdirSync, statSync, renameSync, rmSync, readFileSync, openSync, readSync, closeSync, writeFileSync, unlinkSync } from 'node:fs';
+import { appendFileSync, mkdirSync, statSync, renameSync, rmSync, openSync, readSync, closeSync, writeFileSync, unlinkSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname } from 'node:path';
 
@@ -29,24 +29,52 @@ function chainHash(prev, body) {
 }
 
 // Resume the chain across process restarts: read the last record's hash.
+//
+// The tail is read in a growing window instead of a fixed 64 KiB slice. A
+// single record can legitimately exceed 64 KiB (a bridge payload, a call with
+// many argument keys), and a fixed slice can begin inside that record and leave
+// us with no complete line -- which used to reset the chain to genesis and make
+// the next record look like tampering. Walking back to the previous complete,
+// parseable line is both correct for large records and safe after a crash that
+// left a partial final line.
 function seedFromFile(path) {
   lastHash = GENESIS;
   try {
     const size = statSync(path).size;
-    const start = Math.max(0, size - 65536);
-    const buffer = Buffer.alloc(size - start);
-    const fd = openSync(path, 'r');
-    try { readSync(fd, buffer, 0, buffer.length, start); } finally { closeSync(fd); }
-    let text = buffer.toString('utf8');
-    if (start > 0) {
-      const newline = text.indexOf('\n');
-      // A single oversized record is unusual, but must still seed correctly.
-      text = newline < 0 ? readFileSync(path, 'utf8') : text.slice(newline + 1);
+    if (size === 0) return;
+    let window = Math.min(size, 65536);
+    for (;;) {
+      const start = Math.max(0, size - window);
+      const buffer = Buffer.alloc(size - start);
+      const fd = openSync(path, 'r');
+      try { readSync(fd, buffer, 0, buffer.length, start); } finally { closeSync(fd); }
+      let text = buffer.toString('utf8');
+      if (start > 0) {
+        const newline = text.indexOf('\n');
+        if (newline < 0) {
+          if (start === 0) return;
+          window *= 2;
+          continue;
+        }
+        text = text.slice(newline + 1);
+      }
+      const lines = text.split(String.fromCharCode(10));
+      // Walk backwards so a partial/corrupt final line does not hide the last
+      // intact record before it.
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        try {
+          const last = JSON.parse(line);
+          if (last && last.chain && typeof last.chain.hash === 'string') lastHash = last.chain.hash;
+          return;
+        } catch {
+          /* partial line; try the previous complete one */
+        }
+      }
+      if (start === 0) return;
+      window *= 2;
     }
-    const lines = text.split(String.fromCharCode(10)).filter((l) => l.trim() !== '');
-    if (lines.length === 0) return;
-    const last = JSON.parse(lines[lines.length - 1]);
-    if (last && last.chain && typeof last.chain.hash === 'string') lastHash = last.chain.hash;
   } catch {
     /* fresh file, or unreadable: start a new chain */
   }
@@ -152,13 +180,26 @@ export function setMinConsoleLevel(level) {
 
 // One generation of rotation (audit.jsonl -> audit.jsonl.1). Checking the size
 // on every single line would add a syscall to a hot path, so it is amortised.
+// The new file starts with a boundary record whose `prev` is the old chain head,
+// so the two generations remain linked instead of each restarting at genesis.
 function rotateIfNeeded() {
   if (!logFile) return;
   try {
     if (statSync(logFile).size <= MAX_LOG_BYTES) return;
+    seedFromFile(logFile);
+    const prev = lastHash;
     const rotated = `${logFile}.1`;
     try { rmSync(rotated, { force: true }); } catch { /* ignore */ }
     renameSync(logFile, rotated);
+    const body = {
+      ts: new Date().toISOString(),
+      level: 'info',
+      event: 'audit-rotated',
+      previousFile: rotated,
+    };
+    const record = { ...body, chain: { prev, hash: chainHash(prev, body) } };
+    appendFileSync(logFile, JSON.stringify(record) + '\n');
+    lastHash = record.chain.hash;
   } catch {
     /* no file yet, or a race with another writer: never break logging */
   }
@@ -198,9 +239,15 @@ export function log(level, event, data = {}) {
 export function auditLevel(level, event, data = {}) {
   if (event === 'static-finding' && data.rule === 'cross-tool-reference') return 'info';
   if (event === 'new-tool-detected') return 'info';
-  if (['audit-chain-broken', 'RUG-PULL-SUSPECTED', 'api-error', 'console-error', 'console-port-in-use', 'http-proxy-error', 'inspector-error', 'spawn-failed', 'server-spawn-error', 'bridge-error', 'bridge-unexpected-peer', 'bridge-refused'].includes(event)) return 'warn';
-  if (event === 'tools-call' && data.action === 'block') return data.reason === 'critical-static-findings' ? 'critical' : 'warn';
-  if (event === 'enforced-block' && data.reason === 'rug-pull') return 'warn';
+  // A suspect rug-pull and an audit-chain break are the two signals that must
+  // reach the tray and the 24h alert count. Demoting them to `warn` made the
+  // product's headline detection silent.
+  if (['api-error', 'console-error', 'console-port-in-use', 'http-proxy-error', 'inspector-error', 'spawn-failed', 'server-spawn-error', 'bridge-error'].includes(event)) return 'warn';
+  if (event === 'tools-call' && data.action === 'block') {
+    return ['critical-static-findings', 'rug-pull', 'invalid-manifest', 'manifest-not-verified'].includes(data.reason)
+      ? 'critical'
+      : 'warn';
+  }
   return level;
 }
 

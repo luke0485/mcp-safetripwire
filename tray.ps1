@@ -136,6 +136,8 @@ $state = @{
     deadNotified = $false
     mutedUntil   = [datetime]::MinValue
 }
+$script:authToken = ''
+$script:panelUrl = ''
 
 $node = Find-Node
 $cli = Join-Path $root 'src\cli.js'
@@ -172,10 +174,60 @@ function Close-Stale-Panel {
     } catch { }
 }
 
+function Get-BootstrapUrl {
+    if ([string]::IsNullOrEmpty($script:authToken)) { return $base }
+    # Ask the running console for a one-time code. The long-lived token stays in
+    # this process; the browser only ever sees a single-use value.
+    for ($i = 0; $i -lt 20; $i++) {
+        try {
+            $r = Invoke-RestMethod -Uri "$base/api/bootstrap" -Method Post `
+                -Headers @{ 'X-Tripwire-Token' = $script:authToken } -TimeoutSec 2
+            if ($r.code) { return "$base/?code=$($r.code)" }
+        } catch { }
+        Start-Sleep -Milliseconds 250
+    }
+    Trace('bootstrap code request failed; falling back to an authenticated token link')
+    # Older packaged consoles do not have /api/bootstrap. Do not open the bare
+    # page (that produces the "token is missing" dead end); the token link still
+    # authenticates and is immediately exchanged for an HttpOnly cookie.
+    if ([string]::IsNullOrEmpty($script:authToken)) { return $base }
+    return "$base/?token=$script:authToken"
+}
+
+function Wait-Console {
+    if ([string]::IsNullOrEmpty($script:authToken)) { return $false }
+    for ($i = 0; $i -lt 24; $i++) {
+        try {
+            Invoke-RestMethod -Uri "$base/api/status" -Headers @{ 'X-Tripwire-Token' = $script:authToken } -TimeoutSec 1 | Out-Null
+            return $true
+        } catch {
+            Start-Sleep -Milliseconds 250
+        }
+    }
+    Trace('  console did not become ready before opening the panel')
+    return $false
+}
+
 function Open-Panel {
     Close-Stale-Panel
+    $panel = Join-Path $root 'dist\MCP-SafeTripwire-Panel.exe'
+    if (Test-Path -LiteralPath $panel) {
+        try {
+            [void](Wait-Console)
+            $panelArgs = '--url "' + $base + '" --token-file "' + $tokenFile + '"'
+            # `start` launches the GUI with a normal show state even when the
+            # tray itself runs from a hidden PowerShell window. Start-Process
+            # inherited the hidden parent's show state and opened it minimized.
+            $cmd = 'start "" "' + $panel + '" ' + $panelArgs
+            Start-Process -FilePath (Join-Path $System32 'cmd.exe') -ArgumentList '/c', $cmd -WindowStyle Hidden | Out-Null
+            Trace('  panel launched: ' + $panel)
+            return
+        } catch {
+            Trace('  panel launch failed: ' + $_.Exception.Message)
+        }
+    }
     $exe = Get-BrowserExe
-    $u = if ($script:panelUrl) { $script:panelUrl } else { $base }
+    $u = if ($script:panelUrl) { $script:panelUrl } else { Get-BootstrapUrl }
     Trace("  open-panel: browser=[$exe]")
     if ($exe) {
         try { Start-AppWindow -exe $exe -url $u; Trace('  panel opened as app window'); return }
@@ -215,7 +267,8 @@ if (-not $ownsMutex) {
     }
     if ($alive) {
         Trace('  another instance is alive; opening the panel and exiting')
-        $script:panelUrl = "$base/?token=$held"
+        $script:authToken = $held
+        $script:panelUrl = ''
         Open-Panel
         exit 0
     }
@@ -265,7 +318,8 @@ try { & (Join-Path $System32 'icacls.exe') $tokenFile /inheritance:r /grant:r "$
 Trace('  token written')
 }
 
-$script:panelUrl = "$base/?token=$token"
+$script:authToken = $token
+$script:panelUrl = ''
 $headers = @{ 'X-Tripwire-Token' = $token }
 
 # ---- start the background console (no window) ----

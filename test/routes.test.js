@@ -55,6 +55,20 @@ test('routes round-trip through disk', () => {
   }
 });
 
+test('local relay listen address is pinned to 127.0.0.1', () => {
+  const path = join(tmpdir(), `tripwire-routes-pin-${process.pid}-${Date.now()}.json`);
+  try {
+    saveRoutes(path, { listen: { host: '::1', port: 9911 }, servers: {} });
+    const loaded = loadRoutes(path);
+    assert.equal(loaded.listen.host, '127.0.0.1');
+    assert.equal(loaded.listen.port, 9911);
+    assert.equal(JSON.parse(readFileSync(path, 'utf8')).listen.host, '127.0.0.1');
+  } finally {
+    rmSync(path, { force: true });
+    rmSync(path + '.key', { force: true });
+  }
+});
+
 test('modified remote configuration is rejected instead of used or silently re-signed', () => {
   const path = join(tmpdir(), `tripwire-tamper-${process.pid}-${Date.now()}.json`);
   try {

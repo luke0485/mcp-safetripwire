@@ -1,7 +1,8 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import { dataDir } from './paths.js';
 import { loadRoutes, defaultRoutesPath, localUrlFor } from './routes.js';
+import { readProtectedJson, writeProtectedJson } from './integritystore.js';
 
 // Auto-discovery: know every tool the AI assistants can talk to, notice when a
 // new one appears, and notice when one is protected.
@@ -13,6 +14,26 @@ import { loadRoutes, defaultRoutesPath, localUrlFor } from './routes.js';
 
 export function serverKey(hostId, name) {
   return `${hostId}::${name}`;
+}
+
+// A wrapped stdio entry has a recognisable launch shape:
+//   node <...>/cli.js wrap --name <channel> -- <original...>
+//   safetripwire.exe wrap --name <channel> -- <original...>
+// Matching that shape avoids treating any command whose path merely contains
+// "tripwire" (or a binary renamed tripwire.exe) as already protected.
+export function looksWrapped(info) {
+  if (!info || info.kind !== 'stdio') return false;
+  const command = basename(String(info.command ?? '')).toLowerCase().replace(/\.(exe|cmd|bat)$/, '');
+  const args = Array.isArray(info.args) ? info.args.map(String) : [];
+  const wrapAt = args.indexOf('wrap');
+  const nameAt = args.indexOf('--name');
+  const separatorAt = args.indexOf('--');
+  if (wrapAt < 0 || nameAt <= wrapAt || separatorAt <= nameAt) return false;
+  if (command === 'node') {
+    // Development launcher: the first argument is this project's cli.js.
+    return /(^|[\\/])cli\.js$/i.test(args[wrapAt - 1] ?? '');
+  }
+  return ['safetripwire', 'mcp-safetripwire', 'mcp-tripwire', 'tripwire'].includes(command);
 }
 
 // Is this server already routed through Tripwire?
@@ -28,8 +49,7 @@ export function isProtectedServer(info, routes = loadRoutes(defaultRoutesPath())
       return url.origin === expected.origin && url.pathname === expected.pathname && url.search === expected.search;
     } catch { return false; }
   }
-  const joined = [info.command, ...(info.args ?? [])].filter(Boolean).join(' ');
-  return /mcp-safetripwire|mcp-tripwire|tripwire\.exe|src[\\/]cli\.js/.test(joined);
+  return looksWrapped(info);
 }
 
 export function describeTarget(info) {
@@ -80,18 +100,16 @@ export function defaultKnownPath() {
 }
 
 export function loadKnown(path = defaultKnownPath()) {
-  if (!existsSync(path)) return null; // null == never seeded
-  try {
-    const parsed = JSON.parse(readFileSync(path, 'utf8'));
-    return parsed.servers ?? {};
-  } catch {
-    return null;
+  if (!existsSync(path) && !existsSync(path + '.key')) return null; // null == never seeded
+  const parsed = readProtectedJson(path, { servers: {} });
+  if (!parsed || typeof parsed.servers !== 'object' || Array.isArray(parsed.servers)) {
+    throw new Error('Known-server registry is invalid');
   }
+  return parsed.servers;
 }
 
 export function saveKnown(snapshot, path = defaultKnownPath()) {
-  mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, JSON.stringify({ savedAt: new Date().toISOString(), servers: snapshot }, null, 2) + '\n');
+  writeProtectedJson(path, { servers: snapshot });
   return snapshot;
 }
 

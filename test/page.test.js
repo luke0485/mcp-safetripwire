@@ -7,9 +7,11 @@ import { renderPage } from '../src/page.js';
 // no error anywhere on the server side -- which is exactly what happened once.
 // This test closes that hole by parsing the emitted script.
 function emittedScript(html) {
-  const a = html.indexOf('<script>');
+  // The page starts with a tiny theme bootstrap; parse the application script,
+  // which is the last block.
   const b = html.lastIndexOf('</script>');
-  assert.ok(a >= 0 && b > a, "the page must contain one script block");
+  const a = html.lastIndexOf('<script>', b);
+  assert.ok(a >= 0 && b > a, "the page must contain an application script block");
   return html.substring(a + 8, b);
 }
 

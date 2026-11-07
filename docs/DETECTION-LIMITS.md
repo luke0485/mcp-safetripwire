@@ -2,9 +2,13 @@
 
 ## 当前能力 / Current capabilities
 
-阻断模式会检查未批准的工具通道、工具清单与批准指纹不一致、显式拒绝名单、严重的静态载荷规则，以及诱饵工具/测试秘密。观察模式记录规则命中，不把这些提示当成成功拦截。显式拒绝策略仍优先。stdio 和受支持的 HTTP 路由共用检查器。
+阻断模式会检查未批准的工具通道、工具清单与批准指纹不一致、显式拒绝名单、严重的静态载荷规则，以及诱饵工具/测试秘密。观察模式记录规则命中，不把这些提示当成成功拦截。显式拒绝策略仍优先。stdio 和受支持的 HTTP 路由共用检查器；HTTP 路由显式设置的姿态优先于全局模式。
 
-Block mode checks unapproved channels, changed approved tool lists, explicit deny rules, critical static payload rules, decoy calls and planted test secrets. Observe mode records findings without implying successful enforcement. Explicit deny policies still take precedence. stdio and supported HTTP routes share the inspector.
+Block mode checks unapproved channels, changed approved tool lists, explicit deny rules, critical static payload rules, decoy calls and planted test secrets. Observe mode records findings without implying successful enforcement. Explicit deny policies still take precedence. stdio and supported HTTP routes share the inspector; an explicit HTTP route posture wins over the global mode.
+
+清单指纹覆盖工具名称、标题、描述、输入/输出 schema、annotations 与 `_meta`，对象键递归排序，因此等价的 schema 不因键序不同而误报。静态扫描检查同样的字段和名称。超过 1000 个工具的清单视为异常并拒绝；交叉引用扫描在工具过多时跳过。stdio 子进程会收到每个安装随机生成的 `TRIPWIRE_CANARY` 环境值，外发即拦截；HTTP 路由没有环境植入，只保留静态测试值。
+
+The pinned identity covers a tool's name, title, description, input/output schemas, annotations and `_meta`, with object keys sorted recursively so equivalent schemas do not produce false alarms. Static scanning covers the same fields and the name. Manifests above 1000 tools are rejected, and cross-reference scanning is skipped above a bounded tool count. stdio children receive a per-install random `TRIPWIRE_CANARY`; seeing it outbound blocks the call. HTTP routes have no env planting and keep the static test value.
 
 行为基线是每 10 分钟运行的事后提醒，不是实时行为防火墙。它只对已记录的放行调用学习参数字段、地址引用和调用计数，无法确认真实联网、工具执行结果或完整代码意图。首次使用记为信息，新字段/地址只提醒；样本少于 20 次不报调用量暴增。无调用时保留已学字段，阻断请求和无效时间戳不进入正常样本。地址只是参数中的引用，不是已发生的网络连接。
 
@@ -20,18 +24,18 @@ The advisory baseline keeps learning and can therefore absorb malicious activity
 
 There is no representative labelled production dataset, so no production false-positive or false-negative rate is claimed. Tests verify known benign/malicious examples, mode changes, cached-call bypass protection, HTTP/stdio behaviour and concurrent audit writing. Passing tests does not mean 100% detection accuracy. Keyword rules can still flag legitimate metadata/arguments, and a changed fingerprint can result from a legitimate update.
 
-仅提到同一服务里的其他工具属于普通文档上下文，现记录为信息，其他隐藏文字/载荷规则仍独立检查。检测范围是经过 Tripwire 的 MCP 通道；Agent 自带工具、旁路访问及直接网络请求不在此范围内。旁路 bridge 是只读观察，不阻断。
+仅提到同一服务里的其他工具属于普通文档上下文，现记录为信息，其他隐藏文字/载荷规则仍独立检查。检测范围是经过 Tripwire 的 MCP 通道；Agent 自带工具、旁路访问及直接网络请求不在此范围内。旁路 bridge 默认只读观察；`--protect` 需要 `--allow` 名单、只监听回环，并在转发前同步识别连接进程，识别失败时拒绝。进程身份按 Windows 报告的可执行文件名判断，改名可以绕过。
 
-Mentioning a sibling tool is informational documentation context. Hidden text and payload rules are still checked independently. Coverage applies to MCP channels routed through Tripwire; Agent built-in tools, bypasses and direct network access are outside that scope. The bridge is audit-only.
+Mentioning a sibling tool is informational documentation context. Hidden text and payload rules are still checked independently. Coverage applies to MCP channels routed through Tripwire; Agent built-in tools, bypasses and direct network access are outside that scope. The bridge is audit-only by default; `--protect` requires an allowlist, listens on loopback, identifies the peer synchronously before forwarding, and fails closed when identification fails. Peer identity is the image name reported by Windows, so renaming a binary can bypass it.
 
 ## 审计记录 / Audit records
 
-旧版本每个进程缓存自己的链头，同时追加会把链分叉。新版使用跨进程文件锁，并在锁内重新读取链头。相同异常不会每五分钟重复写入；恢复或出现新的异常仍会报告。用户要求清理旧版误报时，清理工具先归档原始日志，删除已知旧版误报和调试噪声，调整错误等级，重新建立链并写入迁移记录和原始文件摘要。内容修改的校验异常和载荷命中会保留。
+旧版本每个进程缓存自己的链头，同时追加会把链分叉。新版使用跨进程文件锁，并在锁内重新读取链头。链头读取会向后寻找最后一条完整可解析的记录，因此单条大于 64 KiB 的记录、进程崩溃留下的半行或日志轮转都不会重置成 genesis；轮转后的新文件以一条链接到上一代链头的边界记录开始。相同异常不会每五分钟重复写入；恢复或出现新的异常仍会报告。用户要求清理旧版误报时，清理工具先归档原始日志，删除已知旧版误报和调试噪声，调整错误等级，重新建立链并写入迁移记录和原始文件摘要。内容修改的校验异常和载荷命中会保留。
 
-Older writers cached separate chain heads and concurrent appends could fork the chain. New writers use a cross-process file lock and re-read the head inside it. Repeated failures are suppressed. When the user requests legacy cleanup, the one-time tool archives the original, removes known legacy false alerts/debug noise, adjusts severity, rebuilds the chain and adds a migration record with the original file digest. Content-edit mismatches and payload findings remain available.
+Older writers cached separate chain heads and concurrent appends could fork the chain. New writers use a cross-process file lock and re-read the head inside it. Seeding walks back to the last complete, parseable record, so a record larger than 64 KiB, a partial final line after a crash, or log rotation no longer resets the chain to genesis; a rotated file starts with a boundary record linked to the previous head. Repeated failures are suppressed. When the user requests legacy cleanup, the one-time tool archives the original, removes known legacy false alerts/debug noise, adjusts severity, rebuilds the chain and adds a migration record with the original file digest. Content-edit mismatches and payload findings remain available.
 
 哈希链用于发现记录间不一致，不能防止有写权限的人重写整条链；日志只有有限保留窗口。锁争用/磁盘错误时日志追加可能失败，程序优先保持代理转发。它不是远端存证或不可篡改的审计系统。
 
 The hash chain detects inconsistencies but does not prevent an actor with write access from rebuilding the entire chain. Retention is bounded. Lock contention or disk failures can prevent an append; proxy forwarding takes priority. This is not remote attestation or an immutable audit system.
 
-阻断模式要求每个新连接先完成工具清单核验，拒绝未声明工具和异常清单。当前分页工具清单暂不支持，返回明确错误，不以部分清单建立信任。 / Blocking mode verifies the tool manifest on every new connection and refuses undeclared tools and malformed manifests. Paginated manifests are currently unsupported and rejected explicitly rather than trusted partially.
+阻断模式要求每个新连接先完成工具清单核验，拒绝未声明工具和异常清单。`nextCursor: null` 被当作“没有下一页”；真正带游标的分页清单暂不支持，返回明确错误，不以部分清单建立信任。 / Blocking mode verifies the tool manifest on every new connection and refuses undeclared tools and malformed manifests. `nextCursor: null` means "no next page"; a real pagination cursor is unsupported and rejected explicitly rather than trusted partially.

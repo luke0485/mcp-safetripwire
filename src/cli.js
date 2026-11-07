@@ -10,11 +10,11 @@ import { scanManifest } from './scan.js';
 import { classifyTools } from './risk.js';
 import { createHttpProxy } from './httpproxy.js';
 import { defaultStatePath, defaultLogPath, dataDir } from './paths.js';
-import { knownHosts, findHost, listServers, planWrap, applyWrap, renderSnippet, readServer, enumerateServers } from './hosts.js';
-import { runDiscovery, snapshotServers, unprotectedServers } from './discover.js';
-import { protectAll } from './protectall.js';
-import { loadRoutes, saveRoutes, defaultRoutesPath, defaultListen } from './routes.js';
-import { createConsole, newToken, openBrowser } from './console.js';
+import { knownHosts, findHost, listServers, planWrap, renderSnippet, readServer, enumerateServers } from './hosts.js';
+import { runDiscovery, unprotectedServers } from './discover.js';
+import { protectAll, applyEnrollment } from './protectall.js';
+import { loadRoutes, defaultRoutesPath, defaultListen } from './routes.js';
+import { createConsole, newToken, openBrowser, BOOTSTRAP_TTL_MS } from './console.js';
 import { createTcpBridge } from './tcpbridge.js';
 import { loadSettings, postureFor } from './settings.js';
 import { setLogFile } from './log.js';
@@ -26,7 +26,7 @@ const USAGE = `mcp-safetripwire — transparent, LLM-free security broker for th
   mcp-safetripwire wrap    [--name N] [--enforce warn|strip|block] [--policy P] [--log L] [--state S] [--verbose] -- <cmd> [args...]
   mcp-safetripwire serve   [--routes R] [--listen host:port] [--state S] [--log L]
   mcp-safetripwire console [--port N] [--no-open] [--browser] [--token-file P] [--log L]
-  mcp-safetripwire bridge  [--name N] [--listen host:port] [--upstream host:port] [--allow a,b] [--protect] [--log L]
+  mcp-safetripwire bridge  [--name N] [--listen host:port] [--upstream host:port] [--allow a,b] [--protect] [--log-code] [--log L]
   mcp-safetripwire protect-all [--write] [--enforce M] [--listen host:port]
   mcp-safetripwire watch
   mcp-safetripwire scan    [--name N] [--json] -- <cmd> [args...]
@@ -140,23 +140,36 @@ switch (command) {
   case 'serve': {
     const routesPath = typeof opts.routes === 'string' ? opts.routes : defaultRoutesPath();
     const routes = loadRoutes(routesPath);
-    routes.listen = listenFromOpts(opts);
+    // Only override the saved listener when the user explicitly asked for one;
+    // otherwise honor routes.json instead of silently falling back to 8788.
+    if (typeof opts.listen === 'string') routes.listen = listenFromOpts(opts);
     if (Object.keys(routes.servers).length === 0) {
       die(`serve: no servers configured in ${routesPath}\n(add one with: mcp-safetripwire install --host <host> --server <name> --write)`);
     }
     setLogFile(typeof opts.log === 'string' ? opts.log : defaultLogPath());
-    createHttpProxy({
-      listen: routes.listen,
-      routes,
-      statePath: typeof opts.state === 'string' ? opts.state : defaultStatePath(),
-      defaultPosture: postureFor(loadSettings().protection),
-      getPosture: () => postureFor(loadSettings().protection),
-      getRoutes: () => loadRoutes(routesPath),
+    let relay;
+    try {
+      relay = createHttpProxy({
+        listen: routes.listen,
+        routes,
+        statePath: typeof opts.state === 'string' ? opts.state : defaultStatePath(),
+        defaultPosture: postureFor(loadSettings().protection),
+        getPosture: () => postureFor(loadSettings().protection),
+        getRoutes: () => loadRoutes(routesPath),
+        onFatal: (err) => {
+          process.stderr.write(`mcp-safetripwire: cannot listen on http://${routes.listen.host}:${routes.listen.port}: ${err.message}\n`);
+          process.exit(9);
+        },
+      });
+    } catch (err) {
+      die(`serve: ${err.message}`, 3);
+    }
+    relay.once('listening', () => {
+      process.stderr.write(
+        `mcp-safetripwire serving ${Object.keys(routes.servers).length} route(s) on http://${routes.listen.host}:${routes.listen.port}\n` +
+        `routes: ${Object.keys(routes.servers).join(', ')}\n`,
+      );
     });
-    process.stderr.write(
-      `mcp-safetripwire serving ${Object.keys(routes.servers).length} route(s) on http://${routes.listen.host}:${routes.listen.port}\n` +
-      `routes: ${Object.keys(routes.servers).join(', ')}\n`,
-    );
     break;
   }
 
@@ -164,14 +177,18 @@ switch (command) {
     const listen = { host: '127.0.0.1', port: typeof opts.port === 'string' ? Number(opts.port) : 8789 };
     if (!Number.isInteger(listen.port) || listen.port < 1024 || listen.port > 65535) die('console: --port must be 1024-65535');
     const { token, tokenFile } = resolveToken(opts);
-    setLogFile(typeof opts.log === 'string' ? opts.log : defaultLogPath());
-    createConsole({ listen, token });
-    const url = `http://127.0.0.1:${listen.port}/?token=${token}`;
+    const logPath = typeof opts.log === 'string' ? opts.log : defaultLogPath();
+    setLogFile(logPath);
+    const bootstrapCodes = new Map();
+    const bootstrapCode = newToken();
+    bootstrapCodes.set(bootstrapCode, Date.now() + BOOTSTRAP_TTL_MS);
+    createConsole({ listen, token, logPath, bootstrapCodes });
+    const url = `http://127.0.0.1:${listen.port}/?code=${bootstrapCode}`;
     process.stderr.write(
       `\nmcp-safetripwire console\n  ${url}\n\n` +
-      `  The token is handed out once, then kept in an HttpOnly cookie.\n` +
-      `  It is never put on a command line (process lists are readable by other\n` +
-      `  programs running as you).` +
+      `  This is a one-time link (${Math.round(BOOTSTRAP_TTL_MS / 60000)} minutes, single use). The long-lived token\n` +
+      `  stays in the token file, is handed to the page as an HttpOnly cookie,\n` +
+      `  and is never put on a browser command line.` +
       (tokenFile ? `\n  Token file: ${tokenFile}` : '') + `\n` +
       `  Bound to 127.0.0.1 only, with Host/Origin validation.\n` +
       `  Pass --browser to open a normal browser tab instead of an app window.\n` +
@@ -188,23 +205,37 @@ switch (command) {
     if (!listen || !upstream) die('bridge: --listen and --upstream must be host:port');
     const allowlist = typeof opts.allow === 'string' ? opts.allow.split(',').map((s) => s.trim()).filter(Boolean) : [];
     const protect = Boolean(opts.protect);
+    if (protect && allowlist.length === 0) die('bridge: --protect requires --allow with at least one process name');
+    if (!['127.0.0.1', '::1', 'localhost'].includes(listen.host)) {
+      die('bridge: refusing a non-loopback --listen address; the upstream protocol may be arbitrary code execution');
+    }
     setLogFile(typeof opts.log === 'string' ? opts.log : defaultLogPath());
-    createTcpBridge({ name, listen, upstream, allowlist, protect });
-    process.stderr.write(
-      `\nmcp-safetripwire bridge —— 只记录，不拦截\n` +
-      `  监视地址 : ${listen.host}:${listen.port}\n` +
-      `  转发到   : ${upstream.host}:${upstream.port}\n\n` +
-      `  把客户端的连接端口从 ${upstream.port} 改成 ${listen.port} 就开始记录。\n` +
-      `  本程序不会修改被监视程序（例如 Blender）的任何设置，也不会阻断或改写任何数据。\n` +
-      `  Ctrl+C 停止。\n\n`,
-    );
+    const bridge = createTcpBridge({
+      name, listen, upstream, allowlist, protect,
+      logCode: Boolean(opts['log-code']),
+      onFatal: (err) => {
+        process.stderr.write(`mcp-safetripwire: cannot listen on ${listen.host}:${listen.port}: ${err.message}\n`);
+        process.exit(9);
+      },
+    });
+    bridge.once('listening', () => {
+      process.stderr.write(
+        `\nmcp-safetripwire bridge —— ${protect ? '只记录，并按允许名单拒绝其他程序' : '只记录，不拦截'}\n` +
+        `  监视地址 : ${listen.host}:${listen.port}\n` +
+        `  转发到   : ${upstream.host}:${upstream.port}\n\n` +
+        `  把客户端的连接端口从 ${upstream.port} 改成 ${listen.port} 就开始记录。\n` +
+        `  本程序不会修改被监视程序（例如 Blender）的任何设置，也不会改写任何数据。\n` +
+        `  Ctrl+C 停止。\n\n`,
+      );
+    });
     break;
   }
 
   case 'protect-all': {
     const write = Boolean(opts.write);
     const enforce = typeof opts.enforce === 'string' ? opts.enforce : null;
-    const results = protectAll({ launcher: cliLauncher(), listen: listenFromOpts(opts), enforce, write });
+    const listen = typeof opts.listen === 'string' ? listenFromOpts(opts) : loadRoutes(defaultRoutesPath()).listen;
+    const results = protectAll({ launcher: cliLauncher(), listen, enforce, write });
     if (results.length === 0) {
       process.stdout.write('every declared tool is already protected.\n');
       process.exit(0);
@@ -220,7 +251,12 @@ switch (command) {
   }
 
   case 'watch': {
-    const result = runDiscovery({ enumerate: enumerateServers });
+    let result;
+    try {
+      result = runDiscovery({ enumerate: enumerateServers });
+    } catch (err) {
+      die(`watch: ${err.message}`, 3);
+    }
     if (result.seeded) {
       process.stdout.write('baseline recorded: ' + Object.keys(result.snapshot).length + ' tool(s) known.\n');
       process.exit(0);
@@ -295,7 +331,8 @@ switch (command) {
       process.exit(1);
     }
 
-    const listen = listenFromOpts(opts);
+    const routesPath = typeof opts.routes === 'string' ? opts.routes : defaultRoutesPath();
+    const listen = typeof opts.listen === 'string' ? listenFromOpts(opts) : loadRoutes(routesPath).listen;
     const plan = planWrap({
       host,
       serverName: chosen,
@@ -325,20 +362,25 @@ switch (command) {
       process.exit(0);
     }
 
-    const result = applyWrap({ host, serverName: chosen, wrapped: plan.wrapped });
+    // Route first, then config, with rollback. This also stores the route under
+    // plan.channelName, matching the local URL that was written into the host.
+    let result;
+    try {
+      result = applyEnrollment({
+        host,
+        name: chosen,
+        plan,
+        listen,
+        routesPath,
+        routeExtra: typeof opts.state === 'string' ? { state: opts.state } : {},
+      });
+    } catch (err) {
+      die(`install: ${err.message}`, 3);
+    }
     if (!result.ok) die(`install: ${result.reason}`);
     process.stdout.write(`wrapped "${chosen}". backup: ${result.backup}\n`);
 
     if (plan.kind === 'http') {
-      const routesPath = typeof opts.routes === 'string' ? opts.routes : defaultRoutesPath();
-      const routes = loadRoutes(routesPath);
-      routes.servers[chosen] = {
-        ...(routes.servers[chosen] ?? {}),
-        upstream: plan.original.url,
-        posture: plan.route.posture,
-        ...(typeof opts.state === 'string' ? { state: opts.state } : {}),
-      };
-      saveRoutes(routesPath, routes);
       process.stdout.write(`route added to ${routesPath}\n`);
       process.stdout.write(`now run: mcp-safetripwire serve\n`);
     } else {

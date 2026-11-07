@@ -67,18 +67,35 @@ export function scanText(text, where) {
 export function scanTools(tools) {
   const findings = [];
   for (const tool of tools ?? []) {
-    findings.push(...scanText(tool?.description, `tool:${tool?.name}.description`));
-    findings.push(...scanText(JSON.stringify(tool?.inputSchema ?? {}), `tool:${tool?.name}.inputSchema`));
+    const name = tool?.name;
+    // The name itself can carry invisible characters or injection text, and a
+    // client may display `title`/`annotations`/`_meta` just like a description.
+    findings.push(...scanText(name, `tool:${name}.name`));
+    findings.push(...scanText(tool?.title, `tool:${name}.title`));
+    findings.push(...scanText(tool?.description, `tool:${name}.description`));
+    findings.push(...scanText(JSON.stringify(tool?.inputSchema ?? {}), `tool:${name}.inputSchema`));
+    findings.push(...scanText(JSON.stringify(tool?.outputSchema ?? {}), `tool:${name}.outputSchema`));
+    findings.push(...scanText(JSON.stringify(tool?.annotations ?? {}), `tool:${name}.annotations`));
+    findings.push(...scanText(JSON.stringify(tool?._meta ?? {}), `tool:${name}._meta`));
   }
   return findings;
 }
 
 // A sibling reference in API documentation is normal. Keep it as context,
 // rather than treating a name mention alone as evidence of manipulation.
+//
+// This is the only super-linear step in manifest evaluation (tools x names),
+// so it is skipped above a bounded number of tools. The caller rejects larger
+// manifests outright in enforce modes; this cap keeps a hostile server from
+// wedging the single-threaded proxy during evaluation.
+export const MAX_CROSS_REFERENCE_TOOLS = 300;
+
 export function scanCrossReferences(tools) {
   const findings = [];
-  const names = (tools ?? []).map((t) => t?.name).filter((n) => typeof n === 'string');
-  for (const tool of tools ?? []) {
+  const list = tools ?? [];
+  if (list.length > MAX_CROSS_REFERENCE_TOOLS) return findings;
+  const names = list.map((t) => t?.name).filter((n) => typeof n === 'string');
+  for (const tool of list) {
     const desc = String(tool?.description ?? '');
     for (const other of names) {
       if (other === tool?.name || other.length < 4) continue;

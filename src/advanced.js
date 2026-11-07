@@ -31,7 +31,15 @@ export function validateAdvanced(value) {
 }
 
 export function loadAdvanced(path = defaultAdvancedPath()) {
-  if (!existsSync(path) && !existsSync(path + '.key')) return emptyAdvanced();
+  if (!existsSync(path) && !existsSync(path + '.key')) {
+    // A marker means this file existed and was saved at least once. If it is
+    // gone now, treat it as tampering/accidental deletion rather than silently
+    // discarding the user's blacklists and frozen baseline.
+    if (existsSync(path + '.sealed')) {
+      return { ...emptyAdvanced(), integrityError: 'Advanced protection settings were removed; restore a trusted backup' };
+    }
+    return emptyAdvanced();
+  }
   try {
     if (statSync(path).size > 1024 * 1024) throw new Error('Settings too large');
     const { integrity, ...body } = JSON.parse(readFileSync(path, 'utf8'));
@@ -55,6 +63,7 @@ export function saveAdvanced(value, path = defaultAdvancedPath()) {
   try {
     writeFileSync(temp, JSON.stringify({ ...body, integrity: { version: 1, signature } }, null, 2) + '\n', { mode: 0o600 });
     renameSync(temp, path);
+    try { writeFileSync(path + '.sealed', 'sealed\n', { mode: 0o600 }); } catch { /* marker is best effort */ }
   } finally { rmSync(temp, { force: true }); }
   return body;
 }

@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULT_DECOYS, CANARY, decoyTools, decoyNames, isDecoy, appendDecoys, findCanary } from '../src/deception.js';
+import { DEFAULT_DECOYS, CANARY, decoyTools, decoyNames, isDecoy, appendDecoys, findCanary, loadCanary } from '../src/deception.js';
 import { createInspector } from '../src/inspect.js';
 import { setMinConsoleLevel } from '../src/log.js';
 import { hashTools } from '../src/manifest.js';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 setMinConsoleLevel('silent');
 
@@ -39,6 +42,33 @@ test('findCanary spots the planted secret and ignores everything else', () => {
   assert.equal(findCanary('nothing to see'), false);
   assert.equal(findCanary(''), false);
   assert.equal(findCanary(undefined), false);
+});
+
+test('loadCanary creates one stable per-install secret', (t) => {
+  const dir = mkdtempSync(join(tmpdir(), 'tw-canary-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const a = loadCanary(dir);
+  const b = loadCanary(dir);
+  assert.match(a, /^TRIPWIRE-CANARY-[0-9a-f]{32}$/);
+  assert.equal(a, b);
+});
+
+test('a custom canary is the only value the inspector plants', () => {
+  const custom = 'TRIPWIRE-CANARY-' + 'a'.repeat(32);
+  const ins = createInspector({
+    name: 'test',
+    getPin: () => ({ hash: 'a'.repeat(64) }),
+    policy: { mode: 'warn', allowedTools: null, denyTools: [], deception: true },
+    posture: 'warn',
+    transport: 'test',
+    canary: custom,
+    getAdvanced: () => ({ blockedTools: [], blockedDestinations: [], baselineMode: 'off', baseline: {} }),
+  });
+  const customCall = ins.onClientMessage({ jsonrpc: '2.0', id: 8, method: 'tools/call', params: { name: 'read_file', path: custom } });
+  assert.equal(customCall.forward, false);
+  assert.match(customCall.error.error.message, /planted secret/);
+  const defaultCall = ins.onClientMessage({ jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name: 'read_file', path: CANARY } });
+  assert.equal(defaultCall.forward, true);
 });
 
 function inspectorWith(posture, hash = 'a'.repeat(64)) {

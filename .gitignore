@@ -14,3 +14,7 @@ dist/
 .env
 .env.*
 *.dmp
+tools/offline-lab/results/
+tools/offline-lab/*.lock
+tools/offline-lab/*.jsonl
+tools/.cache/

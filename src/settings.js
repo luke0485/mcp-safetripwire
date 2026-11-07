@@ -1,3 +1,4 @@
+import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { dataDir } from './paths.js';
 import { readProtectedJson, writeProtectedJson } from './integritystore.js';
@@ -17,6 +18,14 @@ export function defaultSettingsPath() {
 
 export function loadSettings(path = defaultSettingsPath()) {
   try {
+    if (!existsSync(path) && !existsSync(path + '.key')) {
+      // Missing on a brand-new install means observe. If this file was saved
+      // before, a marker remains; its disappearance is a downgrade (backup
+      // mistake, cleanup, deletion), not a fresh install.
+      if (existsSync(path + '.sealed')) {
+        return { protection: 'protect', integrityError: 'Protection mode configuration was removed; refusing to downgrade to observe' };
+      }
+    }
     const parsed = readProtectedJson(path, { protection: 'observe' });
     if (!['observe', 'protect'].includes(parsed.protection)) throw new Error('Invalid protection mode');
     return { protection: parsed.protection };
@@ -30,6 +39,7 @@ export function saveSettings(settings, path = defaultSettingsPath()) {
   if (!['observe', 'protect'].includes(settings.protection)) throw new Error('Invalid protection mode');
   const clean = { protection: settings.protection };
   writeProtectedJson(path, clean);
+  try { writeFileSync(path + '.sealed', 'sealed\n', { mode: 0o600 }); } catch { /* marker is best effort */ }
   return clean;
 }
 

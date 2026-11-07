@@ -189,6 +189,16 @@ const STYLES = `
  .btns button.tonal{background:var(--tonal);border-color:var(--tonal);color:var(--accent)}
  nav{padding:8px 24px;gap:8px}nav button{border:0;border-radius:999px;min-height:40px;padding:9px 18px;background:transparent;color:var(--hint)}nav button.on{background:var(--tonal);border:0;color:var(--accent)}
  .agent-picker{border:1.5px solid #bdbdbd;border-radius:28px;padding:24px;background:var(--surface)}
+ .app-dialog{width:min(460px,calc(100% - 32px));border:1.5px solid var(--outline);border-radius:24px;padding:24px;background:var(--surface);color:var(--text);box-shadow:0 24px 80px rgba(0,0,0,.28);font:500 14px/1.6 system-ui,"Segoe UI","Microsoft YaHei",sans-serif}
+ .app-dialog::backdrop{background:rgba(0,0,0,.35)}
+ .app-dialog-title{font-size:17px;font-weight:600;margin-bottom:10px}
+ .app-dialog-message{margin:0;color:var(--hint);white-space:pre-wrap;line-height:1.7}
+ .app-dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:22px}
+ .app-toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,12px);max-width:min(560px,calc(100vw - 40px));padding:12px 18px;border-radius:999px;background:#252525;color:#fff;font-size:14px;line-height:1.5;box-shadow:0 10px 34px rgba(0,0,0,.24);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;z-index:300}
+ .app-toast.show{opacity:1;transform:translate(-50%,0)}
+ .app-toast.error{background:#8f2d2d}
+ html[data-theme="dark"] .app-toast{background:#ededed;color:#202020}
+ html[data-theme="dark"] .app-toast.error{background:#8f2d2d;color:#fff}
  .picker-close{width:32px;height:32px;min-height:32px;min-width:32px;padding:0;border:0;border-radius:50%;font-size:20px;background:var(--tonal);color:var(--hint)}.picker-close:hover{background:#dedede}
  .picker-close svg{width:16px;height:16px;display:block}
  select,input:not([type=checkbox]),textarea,.picker-fields select,.row input{font:inherit;color:inherit;border:1.5px solid var(--outline);border-radius:16px;background:var(--surface);min-height:44px;padding:11px 14px;max-width:100%}
@@ -204,6 +214,137 @@ const STYLES = `
  @media(prefers-color-scheme:dark){:root{--accent:#ededed;--accent-fg:#202020;--surface:#222222;--tonal:#353535;--outline:#737373;--text:#ededed;--hint:#b6b6b6}body{background:#161616}header,nav{background:#1c1c1c}.card{background:var(--surface)!important;border-color:#555555!important}.baseline-status{background:#2b2b2b}.advanced-details{border-color:#4f4f4f}.picker-close:hover{background:#414141}.btn-sm,.btns button,.switch button,.langbtn,.row input{color:var(--text);background:var(--surface)}.switch button.on{background:var(--accent);color:var(--accent-fg)}}
  @media(max-width:760px){main{padding:16px}.card{padding:20px}nav{padding:8px 12px}.advanced-fields{grid-template-columns:1fr}}
  @media(max-width:560px){main{padding:12px}.card{padding:18px 16px}.agent-picker{padding:20px}.advanced-head{flex-direction:column;gap:8px}.btns button{white-space:normal}.advanced-options{align-items:stretch;flex-direction:column}.advanced-options label{flex-wrap:wrap}nav button{padding:9px 14px}}
+
+ /* Left rounded navigation rail. */
+ body{display:grid;grid-template-columns:208px minmax(0,1fr);grid-template-rows:auto 1fr;min-height:100vh}
+ header{grid-column:1/-1;grid-row:1}
+ nav{grid-column:1;grid-row:2;display:flex;flex-direction:column;flex-wrap:nowrap;gap:6px;margin:16px 0 16px 16px;padding:12px;background:var(--surface);border:1.5px solid var(--outline);border-radius:22px;position:sticky;top:16px;align-self:start;min-height:calc(100vh - 132px);overflow:visible;width:auto}
+ nav button{display:block;width:100%;text-align:left;border:0;border-radius:14px;background:transparent;color:var(--hint);padding:12px 16px;min-height:44px;font-weight:500}
+ nav button.on{background:var(--tonal);color:var(--accent);font-weight:600}
+ main{grid-column:2;grid-row:2;max-width:100%;width:100%;margin:0 auto;padding:20px 24px 32px;justify-self:stretch;min-width:0;overflow-x:hidden}
+ @media(max-width:760px){body{display:block}nav{flex-direction:row;flex-wrap:nowrap;margin:10px 12px 0;padding:8px;min-height:0;position:static;border-radius:16px;overflow-x:auto}nav button{width:auto;white-space:nowrap;padding:10px 14px}main{padding:16px}}
+
+ /* Five tightly packed lanes: dark and fast in the middle, light and slow outside. */
+ .flow .arrow{height:22px;overflow:hidden;color:#5b6675}
+ .flow .arrow .lane{position:absolute;left:0;right:0;display:block;height:4px;color:inherit}
+ .flow .arrow .lane.l1{top:5px;opacity:.32}
+ .flow .arrow .lane.l2{top:8px;opacity:.55}
+ .flow .arrow .lane.l3{top:11px;opacity:.95}
+ .flow .arrow .lane.l4{top:14px;opacity:.55}
+ .flow .arrow .lane.l5{top:17px;opacity:.32}
+ .flow .arrow .lane i{position:absolute;left:0;top:0;width:3px;height:3px;border-radius:50%;background:currentColor;box-shadow:0 0 5px currentColor;animation:tw-flow 1.6s linear infinite}
+ .flow .arrow .lane.l1 i{animation-duration:1.7s}
+ .flow .arrow .lane.l2 i{animation-duration:1.35s}
+ .flow .arrow .lane.l3 i{animation-duration:.8s}
+ .flow .arrow .lane.l4 i{animation-duration:1.35s}
+ .flow .arrow .lane.l5 i{animation-duration:1.7s}
+ .flow .arrow .lane i:nth-child(2){animation-delay:-.2s}
+ .flow .arrow .lane i:nth-child(3){animation-delay:-.4s}
+ .flow .arrow .lane i:nth-child(4){animation-delay:-.6s}
+ @keyframes tw-flow{0%{left:-4px;opacity:0}8%{opacity:1}92%{opacity:1}100%{left:calc(100% + 4px);opacity:0}}
+ @media(prefers-reduced-motion:reduce){.flow .arrow .lane i{animation:none;left:50%;opacity:.6}}
+ @media(prefers-color-scheme:dark){.agent-logo.deepseek-logo{filter:invert(1)}.flow .arrow{color:#a9b6c6}}
+
+ /* Channel cards in a fixed three-column grid. */
+ .hosts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:auto;gap:16px;align-items:stretch;margin-bottom:16px;width:calc(100vw - 296px);max-width:calc(100vw - 296px);min-width:0}
+ .hosts-grid>.card{margin-bottom:0;min-width:0;max-width:100%;min-height:256px;align-self:stretch;overflow:hidden;display:flex;flex-direction:column}
+ .hosts-grid>.card>.btns{margin-top:auto}
+ .server-list{display:flex;flex-direction:column;gap:2px;margin:6px 0 10px;min-width:0}
+ .server-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid rgba(127,127,127,.22);min-width:0}
+ .server-row:last-child{border-bottom:0}
+ .server-row .server-name{font-weight:600;min-width:0;overflow-wrap:anywhere}
+ .server-row .btn-sm,.server-row .tag{white-space:normal}
+ .server-target{flex-basis:100%;font-size:12px;line-height:1.5;color:var(--hint);overflow-wrap:anywhere}
+ .inventory-summary{display:flex;align-items:center;min-height:54px;margin:0 0 16px;padding:14px 24px;max-width:100%;border:1.5px solid #bcd4ff;border-radius:999px;background:#eef4ff;color:#2457d6;font-weight:600;line-height:1.55;overflow-wrap:anywhere}
+ html[data-theme="light"] .inventory-summary{background:#eef4ff;border-color:#bcd4ff;color:#2457d6}
+ html[data-theme="dark"] .inventory-summary{background:#16233a;border-color:#2f4a73;color:#9cc2ff}
+ @media(max-width:560px){.inventory-summary{border-radius:20px;padding:12px 16px}}
+ .remote-step{margin-top:16px;padding-top:16px;border-top:1.5px solid var(--tonal)}
+ .remote-label{display:block;font-weight:600;margin-bottom:8px}
+ .remote-error{color:#a63232;min-height:20px;margin:8px 0 0;line-height:1.5}
+ @media(max-width:760px){.hosts-grid{grid-template-columns:1fr;grid-auto-rows:auto;width:100%;max-width:100%}.hosts-grid>.card{min-height:220px}}
+
+ /* Data transmission: a narrow bundle leaves one node, fans out into several
+    streams in the middle, then converges into the next node. Solid dots only:
+    no tails, glow or guide lines. */
+ .flow .arrow{height:34px;position:relative;overflow:hidden;color:#4b5a6b;width:calc(100% + 20px);margin:0 -10px;z-index:0}
+ .flow .arrow .dots{position:absolute;inset:0;clip-path:ellipse(50% 50% at 50% 50%);-webkit-clip-path:ellipse(50% 50% at 50% 50%)}
+ .flow .node{position:relative;z-index:1}
+ .flow .arrow .lane{position:absolute;left:0;right:0;height:0;color:inherit}
+ .flow .arrow .lane i{position:absolute;left:0;top:50%;transform:translateY(-50%);border-radius:50%;background:currentColor;box-shadow:none;animation:tw-flow 1.6s linear infinite}
+ @keyframes tw-flow{0%{left:-6px;opacity:0}6%{opacity:1}94%{opacity:1}100%{left:calc(100% + 6px);opacity:0}}
+ @media(prefers-reduced-motion:reduce){.flow .arrow .lane i{animation:none;left:38%;opacity:.55}.flow .arrow .lane i:nth-child(n+2){display:none}}
+ @media(max-width:760px){.flow .arrow{width:calc(100% + 12px);margin:0 -6px}}
+
+ /* Settings entry point and page. */
+ .settingsbtn{width:42px;min-width:42px;height:42px;min-height:42px;padding:0;display:grid;place-items:center;border-radius:50%;flex:0 0 auto}
+ .settingsbtn svg{width:20px;height:20px;display:block}
+ .settingsbtn.on{background:var(--tonal);color:var(--accent);border-color:var(--outline)}
+ .settings-card{max-width:720px}
+ .settings-head{display:flex;align-items:flex-start;gap:14px}
+ .backbtn{width:40px;min-width:40px;height:40px;min-height:40px;padding:0;display:grid;place-items:center;border-radius:50%;flex:0 0 auto}
+ .backbtn svg{width:19px;height:19px;display:block}
+ .settings-section{margin-top:24px;padding-top:20px;border-top:1.5px solid var(--tonal)}
+ .settings-section:first-of-type{margin-top:16px;padding-top:0;border-top:0}
+ .settings-label{font-weight:600;margin-bottom:12px}
+ .settings-note{color:var(--hint);font-size:13px;margin:10px 0 0;line-height:1.6}
+
+ /* Explicit appearance selection. data-theme is always resolved to light or
+    dark, so these rules also override the system-preference media queries. */
+ html[data-theme="light"]{color-scheme:light;--accent:#252525;--accent-fg:#fff;--surface:#fff;--tonal:#e9e9e9;--outline:#b7b7b7;--text:#252525;--hint:#626262}
+ html[data-theme="dark"]{color-scheme:dark;--accent:#ededed;--accent-fg:#202020;--surface:#222222;--tonal:#353535;--outline:#737373;--text:#ededed;--hint:#b6b6b6}
+ html[data-theme="light"] body{background:#f1f1f1;color:var(--text)}
+ html[data-theme="dark"] body{background:#161616;color:var(--text)}
+ html[data-theme="light"] header,html[data-theme="light"] nav{background:#fafafa;border-color:#d6d6d6}
+ html[data-theme="dark"] header,html[data-theme="dark"] nav{background:#1c1c1c;border-color:#555555}
+ html[data-theme="light"] .card{background:var(--surface)!important;border-color:#c9c9c9!important}
+ html[data-theme="dark"] .card{background:var(--surface)!important;border-color:#555555!important}
+ html[data-theme="light"] th{color:#4b5563!important}
+ html[data-theme="dark"] th{color:#8b97a7!important}
+ html[data-theme="light"] td,html[data-theme="light"] th{border-color:#e3e8ee!important}
+ html[data-theme="dark"] td,html[data-theme="dark"] th{border-color:#242e3a!important}
+ html[data-theme="light"] .big{color:#0f1720}
+ html[data-theme="dark"] .big{color:#e6ebf2}
+ html[data-theme="light"] .channel-group{border-color:#dfe4ea}
+ html[data-theme="dark"] .channel-group{border-color:#354151}
+ html[data-theme="light"] .flow{border-color:#edf0f4}
+ html[data-theme="dark"] .flow{border-color:#354151}
+ html[data-theme="light"] .flow .node{background:#fff;color:var(--text);border-color:#b8c1cc}
+ html[data-theme="dark"] .flow .node{background:#202a36;color:#e6ebf2;border-color:#354151}
+ html[data-theme="light"] .flow .node.mid.on{background:#eef1f5;color:#111827;border-color:#111827}
+ html[data-theme="dark"] .flow .node.mid.on{background:#16332e;color:#92dfce;border-color:#478b7d}
+ html[data-theme="light"] .flow .node.mid.off{background:#fdf0f0;color:#c02626;border-color:#e6b3b3}
+ html[data-theme="dark"] .flow .node.mid.off{background:#2b2020;color:#ffb3b3;border-color:#6b3b3b}
+ html[data-theme="light"] .chart-x,html[data-theme="light"] .chart-y{color:#5b6675}
+ html[data-theme="dark"] .chart-x,html[data-theme="dark"] .chart-y{color:#a9b6c6}
+ html[data-theme="light"] .wave-area{fill:rgba(17,24,39,.10)}
+ html[data-theme="dark"] .wave-area{fill:rgba(217,227,239,.10)}
+ html[data-theme="light"] .axis-grid{stroke:#e0e6ed}
+ html[data-theme="dark"] .axis-grid{stroke:#34404d}
+ html[data-theme="light"] .axis-grid-vertical{stroke:#e9edf2}
+ html[data-theme="dark"] .axis-grid-vertical{stroke:#263340}
+ html[data-theme="light"] .baseline-status{background:#f3f3f3}
+ html[data-theme="dark"] .baseline-status{background:#2b2b2b}
+ html[data-theme="light"] .advanced-details{border-color:#d8d8d8}
+ html[data-theme="dark"] .advanced-details{border-color:#4f4f4f}
+ html[data-theme="light"] .picker-close:hover{background:#dedede}
+ html[data-theme="dark"] .picker-close:hover{background:#414141}
+ html[data-theme="light"] .agent-picker{background:var(--surface);color:var(--text)}
+ html[data-theme="dark"] .agent-picker{background:var(--surface);color:var(--text)}
+ html[data-theme="light"] .agent-logo.deepseek-logo{filter:none}
+ html[data-theme="dark"] .agent-logo.deepseek-logo{filter:invert(1)}
+ html[data-theme="light"] .flow .arrow{color:#7e8a98}
+ html[data-theme="dark"] .flow .arrow{color:#b9c4d1}
+ html[data-theme="light"] .startup{background:#fff}
+ html[data-theme="dark"] .startup{background:#161616}
+ html[data-theme="light"] .stat{border-color:#e2e6ec}
+ html[data-theme="dark"] .stat{border-color:#3a3a3a}
+ html[data-theme="light"] .chart-tooltip{background:#fff;border-color:#dfe4ea;color:#334155}
+ html[data-theme="dark"] .chart-tooltip{background:#1f1f1f;border-color:#4a4a4a;color:#e6ebf2}
+ html[data-theme="dark"] .tag{background:#2a2a2a;border-color:#666666;color:#d6d6d6}
+ html[data-theme="dark"] .tag.calm{background:#24302d;border-color:#46645c;color:#9fd8c8}
+ html[data-theme="dark"] .tag.notice{background:#332c20;border-color:#6d5a36;color:#e6c47a}
+ html[data-theme="dark"] .tag.severe{background:#342323;border-color:#6f4040;color:#f0a3a3}
 `;
 
 const I18N = {
@@ -231,17 +372,35 @@ const I18N = {
     addRemote: '添加远程服务', phName: '名称（字母/数字）', add: '添加',
     addRemoteHint: '仅用于支持 HTTP MCP 的 Agent。添加后保存的是 Tripwire 中转配置；请把生成的中转地址填入 Agent 的 MCP 设置，并保持 Tripwire 运行。仅添加服务不会自动保护 Agent；本机命令型 MCP 请使用通道接入。云端 Agent 通常无法访问本机地址。',
     addRemoteEmpty: '名称和地址都不能为空。', addRemoteOk: '已添加，本地中转地址：',
-    modeProtect: '阻断模式',
+    modeProtect: '保护模式',
     trendTitle: '近 24 小时活动',
     trendHint: '每小时一柱，越高事件越多；黄色含告警，红色含严重事件。空柱表示该小时无记录。',
     topoTitle: '防护位置（每个通道一条链路）',
     topoHint: '按 Agent 分组，每个通道单独展示。绿色表示已接入，黄色表示待接入；粒子展示连接方向。',
     topoSlot: '预留 Agent / 通道位置 · 新发现的通道将自动展示',
     topoEmpty: '目前没有任何通道经过 Tripwire —— 也就是说还没有东西被保护。',
-    tabStatus: '保护状态', tabTools: '通道清单', tabActivity: '审计日志', tabRemote: '远程服务',
+    tabStatus: '保护状态', tabTools: 'Agent 与 MCP', tabActivity: '审计日志', tabRemote: 'URL 接入',
+    settingsTitle: '设置', settingsHint: '外观和语言只影响这台电脑上的控制台。',
+    back: '返回',
+    confirmTitle: '请确认', confirmOk: '确定', confirmCancel: '取消',
+    confirmObserveMode: '切换到观察模式\n\n只记录和提醒 不拦截调用',
+    confirmProtectMode: '切换到保护模式\n\n已纳管通道会按规则拦截调用',
+    switchedObserve: '已切换为观察模式', switchedProtect: '已切换为保护模式',
+    settingsLanguage: '语言', settingsTheme: '外观',
+    themeLight: '浅色', themeDark: '深色', themeSystem: '跟随系统',
+    themeNote: '选择“跟随系统”时，系统外观变化会自动切换。',
+    inventorySummary: '已识别 {0} 个 Agent、{1} 个 MCP/插件配置；未纳管 {2} 个，已纳管 {3} 个。',
+    inventoryBuiltin: '内置运行 {0} 个。',
+    builtin: '内置', builtinNoAction: '内置运行，不建议接管',
+    remoteIntro: '这里用于接入无法自动识别的 MCP',
+    noHttpDetected: '当前没有需要在这里接入的 HTTP MCP',
+    manualRemote: '高级：手动添加（仅当 Agent 无法读取本地配置时）',
+    remoteNameLabel: '名称', remoteUrlLabel: 'MCP 地址',
+    remoteNext: '下一步', remoteBack: '上一步', remoteCreate: '创建中转',
+    remoteLocalLabel: '本机中转地址', remoteCopy: '复制', copied: '已复制',
     protection: '保护模式',
-    protectionHint: '先纳入 MCP 通道，重启对应 Agent 使新配置生效，再核对并批准工具清单。观察模式只检查和记录；切到阻断模式后，未批准的工具清单、被改动的工具和命中拦截规则的请求会被拒绝。只有经过 Tripwire 的 MCP 调用受这些规则保护。',
-    observe: '观察模式', protect: '阻断模式',
+    protectionHint: '先纳入 MCP 通道，重启对应 Agent 使新配置生效，再核对并批准工具清单。观察模式只检查和记录；切到保护模式后，未批准的工具清单、被改动的工具和命中拦截规则的请求会被拒绝。只有经过 Tripwire 的 MCP 调用受这些规则保护。',
+    observe: '观察模式', protect: '保护模式',
     system: '系统', pinned: '完整性锁定', noPinned: '尚未锁定 —— 锁定后工具面变更即触发告警',
     dataLocation: '数据目录',
     statsChannels: '通道总数', statsProtected: '已接入', statsUnprotected: '未接入', statsAlerts: '24h 告警',
@@ -266,8 +425,8 @@ const I18N = {
     proxyAddr: '中转地址：', loading: '正在加载…', loadFailed: '加载失败：',
     confirmWrap: '要给 "{0}" 开启保护吗？\n\n程序会先自动备份你的设置，随时可以恢复。',
     wrappedOk: '已开启保护。重启该 AI 工具后生效。', wrapFail: '没能完成：', unknown: '未知原因',
-    confirmRestore: '要恢复到最近一次的设置备份吗？\n\n备份之后的改动会丢失。',
-    restoredOk: '已恢复。',
+    confirmRestore: '要恢复到上一次的配置吗\n\n恢复之后的改动会丢失',
+    restoredOk: '已恢复',
     events: {
       'tripwire-start': '开始保护一个本地工具', 'bridge-listening': '开始监视一个本机通道',
       activity: '记录到一次代码执行', 'tools-list': '读取了工具清单', 'tools-call': '调用了一个工具',
@@ -305,17 +464,35 @@ const I18N = {
     addRemote: 'Add a remote service', phName: 'name (letters/digits)', add: 'Add',
     addRemoteHint: 'For Agents supporting HTTP MCP. Adding saves a Tripwire relay route. Paste the relay URL into the Agent MCP settings and keep Tripwire running. Adding alone does not protect the Agent. Use channel enrollment for local command-based MCP. Cloud Agents usually cannot reach a local URL.',
     addRemoteEmpty: 'Both fields are required.', addRemoteOk: 'Added. Local relay address: ',
-    modeProtect: 'block',
+    modeProtect: 'Protect',
     trendTitle: 'Last 24 hours',
     trendHint: 'One bar per hour; taller means more events. Yellow includes warnings, red includes severe ones. Empty means no records that hour.',
     topoTitle: 'Where it acts (one chain per channel)',
     topoHint: 'Grouped by Agent, with one row per channel. Green means connected; amber means pending. Particles show connection direction.',
     topoSlot: 'Space for another Agent / channel · discovered channels appear automatically',
     topoEmpty: 'No channel passes through Tripwire yet -- nothing is protected.',
-    tabStatus: 'Protection', tabTools: 'Channels', tabActivity: 'Audit log', tabRemote: 'Remote services',
+    tabStatus: 'Protection', tabTools: 'Agents & MCPs', tabActivity: 'Audit log', tabRemote: 'URL setup',
+    settingsTitle: 'Settings', settingsHint: 'Appearance and language apply to this console on this computer.',
+    back: 'Back',
+    confirmTitle: 'Confirm', confirmOk: 'OK', confirmCancel: 'Cancel',
+    confirmObserveMode: 'Switch to Observe mode?\n\nRecord and notify only; calls are not blocked',
+    confirmProtectMode: 'Switch to Protect mode?\n\nEnrolled channels will be blocked when rules match',
+    switchedObserve: 'Switched to Observe mode', switchedProtect: 'Switched to Protect mode',
+    settingsLanguage: 'Language', settingsTheme: 'Appearance',
+    themeLight: 'Light', themeDark: 'Dark', themeSystem: 'Follow system',
+    themeNote: 'Follow system switches automatically when your system appearance changes.',
+    inventorySummary: 'Detected {0} agents and {1} MCP/plugin configuration(s); {2} not enrolled, {3} enrolled.',
+    inventoryBuiltin: 'Built-in runtime(s): {0}.',
+    builtin: 'Built-in', builtinNoAction: 'Built-in runtime; enrollment not recommended',
+    remoteIntro: 'Use this page for MCPs that cannot be detected automatically',
+    noHttpDetected: 'No HTTP MCPs need this page right now',
+    manualRemote: 'Advanced: add manually (only when the Agent has no readable local configuration)',
+    remoteNameLabel: 'Name', remoteUrlLabel: 'MCP address',
+    remoteNext: 'Next', remoteBack: 'Back', remoteCreate: 'Create relay',
+    remoteLocalLabel: 'Local relay address', remoteCopy: 'Copy', copied: 'Copied',
     protection: 'Protection mode',
     protectionHint: 'Enroll the MCP channel, restart its Agent to load the new configuration, then review and approve the tool list. Observe checks and records calls. Block rejects unapproved lists, changed tools and requests matching blocking rules. These rules cover MCP calls routed through SafeTripwire.',
-    observe: 'Observe', protect: 'Block',
+    observe: 'Observe', protect: 'Protect',
     system: 'System', pinned: 'Locked tools', noPinned: 'None yet. Lock a tool once and any later change will be surfaced.',
     dataLocation: 'Data location',
     statsChannels: 'Channels', statsProtected: 'Enrolled', statsUnprotected: 'Not enrolled', statsAlerts: 'Alerts (24h)',
@@ -364,16 +541,25 @@ export function renderPage({ startedAt = '' } = {}) {
   const stamp = escapeForHtml(startedAt);
   return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>MCP SafeTripwire</title><link rel="icon" href="${BRAND_LOGO}">
+<script>try{var s=localStorage.getItem('tw-theme')||'system';var d=s==='dark'||(s!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.setAttribute('data-theme',d?'dark':'light');}catch(e){document.documentElement.setAttribute('data-theme','light');}</script>
 <style>${STYLES}</style></head>
 <body>
-<div class="startup" id="startup" aria-hidden="true"><img src="${BRAND_LOGO}" alt=""></div>
 <header>
   <div><h1 style="display:flex;align-items:center;gap:12px">MCP SafeTripwire<img src="${BRAND_LOGO}" alt="" width="30" height="30"></h1><p class="lede" id="lede"></p><p class="stamp">__STARTED__</p></div>
-  <button class="langbtn" id="langbtn"></button>
+  <button class="langbtn settingsbtn" id="settingsbtn" type="button" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
 </header>
 <nav id="nav"></nav>
 <main id="main"></main>
 <dialog id="agent-picker" class="agent-picker" aria-label="Agent"></dialog>
+<dialog id="app-dialog" class="app-dialog" aria-labelledby="app-dialog-title">
+  <div class="app-dialog-title" id="app-dialog-title"></div>
+  <p class="app-dialog-message" id="app-dialog-message"></p>
+  <div class="app-dialog-actions">
+    <button type="button" class="btn-sm" id="app-dialog-cancel"></button>
+    <button type="button" class="btn-sm" id="app-dialog-ok"></button>
+  </div>
+</dialog>
+<div id="app-toast" class="app-toast" role="status" aria-live="polite"></div>
 <script>
 const I18N = ${JSON.stringify(I18N)};
 const AGENT_LOGOS = ${JSON.stringify(AGENT_LOGOS)};
@@ -382,12 +568,53 @@ const AUDIT_TEXT = ${JSON.stringify(AUDIT_TEXT)};
 const auditText = ${auditText.toString()};
 let LANG = (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en';
 try { const s = localStorage.getItem('tw-lang'); if (s === 'zh' || s === 'en') LANG = s; } catch (e) {}
+let THEME = 'system';
+try { const s = localStorage.getItem('tw-theme'); if (s === 'light' || s === 'dark' || s === 'system') THEME = s; } catch (e) {}
+const systemPrefersDark = () => !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+const resolvedTheme = () => THEME === 'system' ? (systemPrefersDark() ? 'dark' : 'light') : THEME;
+const applyTheme = () => { document.documentElement.setAttribute('data-theme', resolvedTheme()); };
+applyTheme();
 const T = () => I18N[LANG];
 const t = (k) => T()[k];
 const labelFor = (ev) => (T().events[ev] || ev);
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function uiConfirm(message, title) {
+  const dialog = document.getElementById('app-dialog');
+  if (!dialog) return Promise.resolve(true);
+  const ok = document.getElementById('app-dialog-ok');
+  const cancel = document.getElementById('app-dialog-cancel');
+  const heading = document.getElementById('app-dialog-title');
+  const body = document.getElementById('app-dialog-message');
+  if (heading) heading.textContent = title || t('confirmTitle');
+  if (body) body.textContent = message;
+  if (ok) ok.textContent = t('confirmOk');
+  if (cancel) cancel.textContent = t('confirmCancel');
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      try { dialog.close(); } catch (e) {}
+      resolve(value);
+    };
+    if (ok) ok.onclick = () => finish(true);
+    if (cancel) cancel.onclick = () => finish(false);
+    dialog.oncancel = (event) => { if (event) event.preventDefault(); finish(false); };
+    if (dialog.open) { try { dialog.close(); } catch (e) {} }
+    dialog.showModal();
+  });
+}
+let toastTimer = null;
+function uiToast(message, failed) {
+  const el = document.getElementById('app-toast');
+  if (!el) return;
+  el.textContent = message;
+  el.className = 'app-toast show' + (failed ? ' error' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'app-toast'; }, 3200);
+}
 let backendDown = false;
 // Every call is bounded: without this a slow or wedged backend leaves the
 // spinner up forever, which reads as "the app is frozen".
@@ -414,6 +641,7 @@ const api = (p, o = {}) => {
 const TABS = ['status', 'tools', 'activity', 'remote'];
 const TAB_LABEL = { status: 'tabStatus', tools: 'tabTools', activity: 'tabActivity', remote: 'tabRemote' };
 let TAB = 'status';
+let TAB_BEFORE_SETTINGS = 'status';
 const tabs = {};
 let topologySignature = '';
 const topologySignatureOf = (s) => JSON.stringify([s.tools && s.tools.topology, (s.hosts || []).map(h => [h.id, h.exists]), s.tools && s.tools.supply]);
@@ -422,7 +650,10 @@ const topologySignatureOf = (s) => JSON.stringify([s.tools && s.tools.topology, 
 // have connected to a watched channel. Built with concatenation, not template
 // literals, so this file needs no nested escaping.
 function modeSummary(s) {
-  return (LANG === 'zh' ? '当前模式：' : 'Current mode: ') + t(s.protection === 'protect' ? 'modeProtect' : 'modeObserve') + (s.protection === 'protect' ? (LANG === 'zh' ? ' · 对已接入的 MCP 执行阻断规则' : ' · Blocking rules apply to enrolled MCP traffic') : (LANG === 'zh' ? ' · 只检查和记录，不拦截调用' : ' · Checks and records calls without blocking'));
+  return (LANG === 'zh' ? '当前模式 ' : 'Current mode: ') + t(s.protection === 'protect' ? 'modeProtect' : 'modeObserve') +
+    (s.protection === 'protect'
+      ? (LANG === 'zh' ? ' 已纳管通道按规则拦截' : ' enrolled channels block on matching rules')
+      : (LANG === 'zh' ? ' 只记录和提醒 不拦截调用' : ' record and notify only, no blocking'));
 }
 function statsHtml(s) {
   const tk = s.tools || { total: 0, unprotected: 0, alerts24h: 0 };
@@ -454,9 +685,9 @@ function pendingHtml(s) {
 }
 
 window.doApprove = async (name, hash) => {
-  if (!confirm(t('confirmApprove').replace('{0}', name))) return;
+  if (!(await uiConfirm(t('confirmApprove').replace('{0}', name)))) return;
   const r = await api('/api/approve', { method: 'POST', body: JSON.stringify({ name, hash, confirm: true }) });
-  alert(r.ok ? t('approveDone') : (t('wrapFail') + (r.error || t('unknown'))));
+  uiToast(r.ok ? t('approveDone') : (t('wrapFail') + (r.error || t('unknown'))), !r.ok);
   if (r.ok) render();
 };
 
@@ -467,7 +698,26 @@ function agentLabel(host) {
   const labels = Object.fromEntries(AGENT_CATALOG.map(agent => [agent.id, agent.label]));
   const agent = AGENT_CATALOG.find(agent => agent.id === key);
   const image = AGENT_LOGOS[agent?.icon || key];
-  return '<span class="agent-label">' + (image ? '<img class="agent-logo" src="' + image + '" alt="" aria-hidden="true">' : '<span class="agent-logo agent-fallback" aria-hidden="true">' + esc((labels[key] || host || '?').slice(0,1)) + '</span>') + '<span>' + esc(labels[key] || host) + '</span></span>';
+  const logoClass = key === 'deepseek-harness' ? 'agent-logo deepseek-logo' : 'agent-logo';
+  return '<span class="agent-label">' + (image ? '<img class="' + logoClass + '" src="' + image + '" alt="" aria-hidden="true">' : '<span class="agent-logo agent-fallback" aria-hidden="true">' + esc((labels[key] || host || '?').slice(0,1)) + '</span>') + '<span>' + esc(labels[key] || host) + '</span></span>';
+}
+const SERVER_PRESETS = {
+  'codex::node_repl': { label: { zh: 'Computer Use', en: 'Computer Use' }, builtin: true },
+};
+const CN_AGENTS = new Set([
+  'deepseek-harness', 'zcode', 'qwen-code', 'qwenwork', 'qoder', 'qoder-ide',
+  'codebuddy', 'codebuddy-ide', 'trae', 'trae-ide', 'trae-solo',
+  'kimi-code', 'kimi-claw', 'iflow', 'comate', 'codearts', 'lingma',
+  'workbuddy', 'coze', 'minimax-agent', 'minimax-code', 'minimax-design',
+]);
+function serverPreset(hostId, name) { return SERVER_PRESETS[hostId + '::' + name]; }
+function serverNameLabel(hostId, name) {
+  const preset = serverPreset(hostId, name);
+  return preset ? (preset.label[LANG] || preset.label.en) : name;
+}
+function mcpTerm(hostId) {
+  if (!CN_AGENTS.has(hostId)) return 'MCP';
+  return LANG === 'zh' ? '插件' : 'Plugin';
 }
 function topologyHtml(s) {
   topologySignature = topologySignatureOf(s);
@@ -482,18 +732,49 @@ function topologyHtml(s) {
   // Installation without an MCP is shown in the picker/list, not as an empty
   // protection chain. Keep exactly one empty slot for adding a channel.
   let body = '<div class="channels">';
-  const arrow = '<span class="arrow" aria-hidden="true"><i></i><i></i><i></i></span>';
+  const laneSpecs = [
+    { top: 5, base: 1.7, size: 3, opacity: 0.45, count: 10 },
+    { top: 11, base: 1.3, size: 5, opacity: 0.68, count: 15 },
+    { top: 17, base: 2.0, size: 7, opacity: 0.82, count: 5, sequential: true },
+    { top: 23, base: 1.38, size: 5, opacity: 0.68, count: 15 },
+    { top: 29, base: 1.78, size: 3, opacity: 0.45, count: 10 },
+  ];
+  const arrow = '<span class="arrow" aria-hidden="true"><span class="dots">' + laneSpecs.map((lane, laneIndex) =>
+    '<span class="lane" style="top:' + lane.top + 'px;opacity:' + lane.opacity + '">' +
+    Array.from({ length: lane.count }, (_, dot) => {
+      let phase, duration, size, jitter;
+      if (lane.sequential) {
+        // Large centre particles move slowly, with deliberately uneven gaps:
+        // they arrive one at a time, but never on a visible beat.
+        const centrePhases = [0.03, 0.18, 0.52, 0.65, 0.9];
+        duration = 2.0;
+        phase = centrePhases[dot] ?? 0.5;
+        size = lane.size + (dot % 2 ? 0.4 : -0.4);
+        jitter = (((dot * 2 + 1) % 3) - 1) * 1.1;
+      } else {
+        phase = (dot * 0.61803398875 + laneIndex * 0.173 + 0.07) % 1;
+        duration = lane.base + laneIndex * 0.025 + ((dot * 7 + laneIndex * 5) % 5) * 0.018;
+        size = lane.size + (((dot + laneIndex) % 3) - 1) * 0.6;
+        jitter = (((dot * 5 + laneIndex * 3) % 3) - 1) * 1.1;
+      }
+      const dotTop = jitter < 0 ? 'calc(50% - ' + Math.abs(jitter).toFixed(1) + 'px)' : 'calc(50% + ' + jitter.toFixed(1) + 'px)';
+      return '<i style="width:' + size.toFixed(1) + 'px;height:' + size.toFixed(1) +
+        'px;top:' + dotTop + ';animation-duration:' + duration.toFixed(3) +
+        's;animation-delay:-' + (phase * duration + laneIndex * 0.03).toFixed(3) + 's"></i>';
+    }).join('') +
+    '</span>').join('') + '</span></span>';
   for (const [host, channels] of [...groups].sort(([a],[b]) => { const rank=id=>AGENT_CATALOG.findIndex(agent=>agent.id===id); return rank(a)>=0 && rank(b)>=0 ? rank(a)-rank(b) : a.localeCompare(b,'en',{sensitivity:'base'}); })) {
     const vendor = AGENT_CATALOG.find(agent => agent.id === host)?.vendor;
     body += '<section class="channel-group"><div class="channel-heading"><span class="agent-heading">' + agentLabel(host) + (vendor ? '<span class="muted" style="font-weight:400">' + esc(vendor) + '</span>' : '') + '</span><span class="muted">' + channels.length + esc(t('sumChannels')) + '</span></div>';
     if (!channels.length) body += '<p class="muted">' + esc(t('topoEmpty')) + '</p>';
     for (const r of channels) {
+    const targetHost = r.host.split('@')[0];
     body += '<div class="flow ' + (r.protected ? 'protected' : 'unprotected') + '">' +
       '<span class="node">' + agentLabel(r.host) + '</span>' +
       arrow +
       '<span class="node mid ' + (r.protected ? 'on' : 'off') + '">SafeTripwire</span>' +
       arrow +
-      '<span class="node">' + esc(r.name) + '</span>' +
+      '<span class="node">' + esc(serverNameLabel(targetHost, r.name)) + '</span>' +
       '<span class="flow-flags"><span class="tag ' + (r.protected ? 'calm' : 'notice') + '">' +
       esc(r.protected ? t('protected') : t('unprotected')) + '</span>' +
       (s.tools && s.tools.supply && s.tools.supply[r.host + '::' + r.name]
@@ -628,15 +909,15 @@ function advancedHtml(a) {
  advancedSnapshot = a;
  const zh = LANG === 'zh', count = Object.keys(a.baseline).length;
  const mode = zh ? {off:'暂不开启',warn:'异常时提醒',block:'异常时拦截'} : {off:'Off',warn:'Notify on changes',block:'Block changes'};
- return '<section class="card advanced-card"><div class="advanced-head"><div><div class="big">'+(zh?'进阶防护':'Advanced protection')+'</div><p class="muted">'+(zh?'先正常使用，再把可信行为记下来。以后发现变化时，由你选择提醒或拦截。':'Use your tools normally, then save their trusted behaviour. Choose whether later changes trigger a notice or a block.')+'</p></div></div>'+
- '<div class="baseline-status">'+(count ? (zh?'已记住 '+count+' 个工具的可信行为':'Trusted behaviour saved for '+count+' tools') : (zh?'还没有可信行为样本，先接入并批准通道，再正常使用。':'No trusted sample yet. Enroll and approve a channel, then use it normally.'))+' · '+esc(mode[a.baselineMode])+'</div>'+
+ return '<section class="card advanced-card"><div class="advanced-head"><div><div class="big">'+(zh?'进阶防护':'Advanced protection')+'</div><p class="muted">'+(zh?'先正常使用 再记下可信行为 以后发现变化时 由你选择提醒或拦截':'Use your tools normally, then save their trusted behaviour. Choose whether later changes trigger a notice or a block.')+'</p></div></div>'+
+ '<div class="baseline-status">'+(count ? (zh?'已记住 '+count+' 个工具的可信行为':'Trusted behaviour saved for '+count+' tools') : (zh?'还没有可信行为样本 先接入并批准通道 再正常使用':'No trusted sample yet. Enroll and approve a channel, then use it normally.'))+' '+esc(mode[a.baselineMode])+'</div>'+
  '<div class="switch" role="group" aria-label="'+(zh?'异常处理':'Response to changes')+'"><button class="'+(a.baselineMode==='warn'?'on':'')+'" onclick="setBaselineResponse(&quot;warn&quot;)">'+(zh?'异常时提醒':'Notify on changes')+'</button><button class="'+(a.baselineMode==='block'?'on':'')+'" onclick="setBaselineResponse(&quot;block&quot;)">'+(zh?'异常时拦截':'Block changes')+'</button></div>'+
- '<div class="btns"><button class="tonal" onclick="saveAdvancedUi(true)">'+(zh?'记住当前正常行为':'Save trusted behaviour')+'</button></div><p class="muted">'+(zh?'每个工具至少需要20次正常调用。只有开启阻断模式，才会拦截经过本程序的 MCP 请求。':'Each tool needs at least 20 allowed calls. Blocking requires Block mode and applies to MCP requests routed through SafeTripwire.')+'</p>'+
+ '<div class="btns"><button class="tonal" onclick="saveAdvancedUi(true)">'+(zh?'记住当前正常行为':'Save trusted behaviour')+'</button></div><p class="muted">'+(zh?'每个工具至少需要20次正常调用 只有开启保护模式 才会拦截经过本程序的 MCP 请求':'Each tool needs at least 20 allowed calls. Blocking requires Protect mode and applies to MCP requests routed through SafeTripwire.')+'</p>'+
  '<details class="advanced-details"><summary>'+(zh?'自定义黑名单和详细设置':'Custom blocklists and detailed settings')+'</summary><div class="advanced-fields">'+
- '<label class="advanced-field"><span>'+(zh?'不允许使用的工具':'Tools to block')+'</span><textarea id="deny-tools" placeholder="'+(zh?'每行填写一个工具名':'One tool name per line')+'">'+esc(a.blockedTools.join('\\n'))+'</textarea><small>'+(zh?'不知道工具名可以留空，不影响已有防护。':'Leave empty if unsure. Existing protection still applies.')+'</small></label>'+
- '<label class="advanced-field"><span>'+(zh?'不允许访问的域名':'Domains to block')+'</span><textarea id="deny-domains" placeholder="example.com">'+esc(a.blockedDestinations.join('\\n'))+'</textarea><small>'+(zh?'每行一个域名，自动包含子域名。':'One domain per line; subdomains are included.')+'</small></label></div>'+
- '<div class="advanced-options"><label>'+(zh?'行为变化处理':'Response to changes')+'<select id="baseline-mode">'+['off','warn','block'].map(v=>'<option value="'+v+'" '+(a.baselineMode===v?'selected':'')+'>'+esc(mode[v])+'</option>').join('')+'</select></label><label><input id="baseline-fields" type="checkbox" '+(a.checkNewFields?'checked':'')+'>'+(zh?'同时检查新增参数（可选）':'Also check new argument fields (optional)')+'</label></div>'+
- '<div class="btns"><button class="primary" onclick="saveAdvancedUi(false)">'+(zh?'保存自定义规则':'Save custom rules')+'</button></div></details><div id="advanced-feedback" class="advanced-feedback" role="status">'+(a.integrityError?esc(zh?'规则文件校验失败，请恢复可信备份。':'Rule integrity check failed. Restore a trusted backup.'):'')+'</div></section>';
+ '<label class="advanced-field"><span>'+(zh?'不允许使用的工具':'Tools to block')+'</span><textarea id="deny-tools" placeholder="'+(zh?'每行填写一个工具名':'One tool name per line')+'">'+esc(a.blockedTools.join('\\n'))+'</textarea><small>'+(zh?'不知道工具名可以留空 不影响已有防护':'Leave empty if unsure. Existing protection still applies.')+'</small></label>'+
+ '<label class="advanced-field"><span>'+(zh?'不允许访问的域名':'Domains to block')+'</span><textarea id="deny-domains" placeholder="example.com">'+esc(a.blockedDestinations.join('\\n'))+'</textarea><small>'+(zh?'每行一个域名 自动包含子域名':'One domain per line; subdomains are included.')+'</small></label></div>'+
+ '<div class="advanced-options"><label>'+(zh?'行为变化处理':'Response to changes')+'<select id="baseline-mode">'+['off','warn','block'].map(v=>'<option value="'+v+'" '+(a.baselineMode===v?'selected':'')+'>'+esc(mode[v])+'</option>').join('')+'</select></label><label><input id="baseline-fields" type="checkbox" '+(a.checkNewFields?'checked':'')+'>'+(zh?'同时检查新增参数 可选':'Also check new argument fields (optional)')+'</label></div>'+
+ '<div class="btns"><button class="primary" onclick="saveAdvancedUi(false)">'+(zh?'保存自定义规则':'Save custom rules')+'</button></div></details><div id="advanced-feedback" class="advanced-feedback" role="status">'+(a.integrityError?esc(zh?'规则文件校验失败 请恢复可信备份':'Rule integrity check failed. Restore a trusted backup.'):'')+'</div></section>';
 }
 function advancedFeedback(message, failed) {
  const node=document.getElementById('advanced-feedback');if(node){node.textContent=message;node.className='advanced-feedback'+(failed?' error':'');}
@@ -655,11 +936,11 @@ function refreshAdvancedCard(saved, keepDraft) {
 window.setBaselineResponse = async function(mode) {
  try {
   advancedSnapshot=await api('/api/advanced',{method:'POST',body:JSON.stringify({baselineMode:mode})});
-  refreshAdvancedCard(advancedSnapshot, true); advancedFeedback(LANG==='zh'?'已保存。实际拦截还需开启阻断模式。':'Saved. Actual blocking also requires Block mode.',false);
+  refreshAdvancedCard(advancedSnapshot, true); advancedFeedback(LANG==='zh'?'已保存 实际拦截还需开启保护模式':'Saved. Actual blocking also requires Protect mode.',false);
  } catch(e){advancedFeedback(e.message,true);}
 };
 window.saveAdvancedUi = async function(freeze) {
- if (freeze && !confirm(LANG === 'zh' ? '请确认最近的工具调用正常。将保存至少20次正常调用的已批准工具，作为之后检查的参考。' : 'Confirm recent tool calls were legitimate. Save approved tools with at least 20 allowed calls as the reference for future checks.')) return;
+ if (freeze && !(await uiConfirm(LANG === 'zh' ? '请确认最近的工具调用正常 将保存至少20次正常调用作为之后检查的参考' : 'Confirm recent tool calls were legitimate. Save approved tools with at least 20 allowed calls as the reference for future checks.'))) return;
  const lines = id => document.getElementById(id).value.split(/\\r?\\n/).map(v=>v.trim()).filter(Boolean);
  try {
   const body=freeze?{freeze:true,confirm:true}:{blockedTools:lines('deny-tools'),blockedDestinations:lines('deny-domains'),baselineMode:document.getElementById('baseline-mode').value,checkNewFields:document.getElementById('baseline-fields').checked};
@@ -673,12 +954,12 @@ tabs.status = async () => {
   updateLede(s);
   const advanced = await api('/api/advanced');
   const on = s.protection === 'protect';
-  return statsHtml(s) + chartHtml(s) + topologyHtml(s) + pendingHtml(s) + peersHtml(s) + advancedHtml(advanced) + \`<div class="card">
+  return chartHtml(s) + topologyHtml(s) + peersHtml(s) + advancedHtml(advanced) + \`<div class="card">
    <div class="big">\${esc(t('protection'))}</div>
-   <p class="muted">\${esc(t('protectionHint'))}</p>
+   <div class="mode-summary muted">\${esc(modeSummary(s))}</div>
    <div class="switch">
-     <button class="\${on ? '' : 'on'}" onclick="setProtection('observe')">\${esc(t('observe'))}</button>
-     <button class="\${on ? 'on' : ''}" onclick="setProtection('protect')">\${esc(t('protect'))}</button>
+     <button data-mode="observe" class="\${on ? '' : 'on'}" onclick="setProtection('observe')">\${esc(t('observe'))}</button>
+     <button data-mode="protect" class="\${on ? 'on' : ''}" onclick="setProtection('protect')">\${esc(t('protect'))}</button>
    </div></div>
   <div class="card"><table>
    <tr><th>\${esc(t('system'))}</th><td>\${esc(s.platform)}</td></tr>
@@ -697,17 +978,35 @@ tabs.tools = async () => {
   const s = await api('/api/status');
   const found = s.hosts.filter((h) => h.exists || h.installed);
   if (!found.length) return '<div class="card">' + esc(t('noHosts')) + '</div>';
-  return found.map((h) => \`<div class="card">
-   <div class="big agent-heading">\${agentLabel(h.id)} <span class="muted">\${esc(h.vendor || '')}</span></div>
-   <div class="muted" style="margin-bottom:8px">\${esc(h.path)}\${h.scope === 'project' ? ' · ' + esc(h.project || '') : ''}</div>
-   \${h.servers.length ? \`<table><tr><th>\${esc(t('colTool'))}</th><th>\${esc(t('colConn'))}</th><th>\${esc(t('colState'))}</th><th></th></tr>
-     \${h.servers.map((sv) => \`<tr><td>\${esc(sv.name)}</td>
-       <td>\${sv.kind === 'http' ? esc(t('remoteService')) : esc(t('localProgram'))}</td>
-       <td>\${sv.wrapped ? '<span class="tag calm">' + esc(t('protected')) + '</span>' : '<span class="tag">' + esc(t('unprotected')) + '</span>'}</td>
-       <td>\${sv.wrapped ? '' : \`<button class="btn-sm" onclick="doWrap(\${esc(JSON.stringify(h.id))},\${esc(JSON.stringify(sv.name))})">\${esc(t('enableProtection'))}</button>\`}</td></tr>\`).join('')}
-     </table>\` : '<p class="muted">' + esc(t('noTools')) + '</p>'}
-   <div class="btns"><button onclick="doRestore(\${esc(JSON.stringify(h.id))})">\${esc(t('restoreMine'))}</button></div>
- </div>\`).join('');
+  const totalServers = found.reduce((n, h) => n + h.servers.length, 0);
+  const builtinCount = found.reduce((n, h) => n + h.servers.filter((sv) => serverPreset(h.id, sv.name)?.builtin).length, 0);
+  const userServers = totalServers - builtinCount;
+  const protectedServers = found.reduce((n, h) => n + h.servers.filter((sv) => sv.wrapped).length, 0);
+  const unprotectedServers = userServers - protectedServers;
+  const eligible = found.some((h) => h.servers.some((sv) => !sv.wrapped && !serverPreset(h.id, sv.name)?.builtin));
+  let summaryText = t('inventorySummary')
+    .replace('{0}', found.length).replace('{1}', userServers)
+    .replace('{2}', unprotectedServers).replace('{3}', protectedServers);
+  if (builtinCount) summaryText += t('inventoryBuiltin').replace('{0}', builtinCount);
+  const summary = '<p class="inventory-summary">' + esc(summaryText) + '</p>' +
+    (eligible ? '<div class="btns" style="margin:-4px 0 14px"><button class="btn-sm" onclick="doProtectAll()">' + esc(t('protectAll')) + '</button></div>' : '');
+  return summary + '<div class="hosts-grid">' + found.map((h) => {
+    const serverRows = h.servers.map((sv) => {
+      const preset = serverPreset(h.id, sv.name);
+      const builtin = Boolean(preset?.builtin);
+      return '<div class="server-row"><span class="server-name">' + esc(serverNameLabel(h.id, sv.name)) + '</span>' +
+        (builtin ? '<span class="tag">' + esc(t('builtin')) + '</span>' : '<span class="tag">' + esc(mcpTerm(h.id)) + '</span>') +
+        '<span class="muted">' + esc(sv.kind === 'http' ? t('remoteService') : t('localProgram')) + '</span>' +
+        '<span class="tag ' + (sv.wrapped ? 'calm' : '') + '">' + esc(sv.wrapped ? t('protected') : t('unprotected')) + '</span>' +
+        (builtin ? '<span class="muted">' + esc(t('builtinNoAction')) + '</span>' : (sv.wrapped ? '' :
+          '<button class="btn-sm" onclick="doWrap(' + esc(JSON.stringify(h.id)) + ',' + esc(JSON.stringify(sv.name)) + ')">' + esc(t('enableProtection')) + '</button>')) +
+        (builtin ? '' : '<span class="server-target">' + esc(sv.target || '') + '</span>') + '</div>';
+    }).join('');
+    return '<div class="card"><div class="big agent-heading">' + agentLabel(h.id) +
+      ' <span class="muted">' + esc(h.vendor || '') + '</span></div>' +
+      (h.servers.length ? '<div class="server-list">' + serverRows + '</div>' : '<p class="muted">' + esc(t('noTools')) + '</p>') +
+      '<div class="btns"><button onclick="doRestore(' + esc(JSON.stringify(h.id)) + ')">' + esc(t('restoreMine')) + '</button></div></div>';
+  }).join('') + '</div>';
 };
 
 tabs.activity = async () => {
@@ -734,26 +1033,109 @@ tabs.activity = async () => {
 tabs.remote = async () => {
   const s = await api('/api/status');
   const routes = s.routes || [];
-  let rows = '';
+  const httpServers = [];
+  for (const h of s.hosts) {
+    for (const sv of h.servers) if (sv.kind === 'http') httpServers.push({ h, sv });
+  }
+  let list = '';
+  if (httpServers.length) {
+    list = '<div class="server-list">' + httpServers.map(({ h, sv }) =>
+      '<div class="server-row"><span class="server-name">' + agentLabel(h.id) + ' · ' + esc(serverNameLabel(h.id, sv.name)) + '</span>' +
+      '<span class="tag">' + esc(mcpTerm(h.id)) + '</span>' +
+      '<span class="tag ' + (sv.wrapped ? 'calm' : '') + '">' + esc(sv.wrapped ? t('protected') : t('unprotected')) + '</span>' +
+      (sv.wrapped ? '' : '<button class="btn-sm" onclick="doWrap(' + esc(JSON.stringify(h.id)) + ',' + esc(JSON.stringify(sv.name)) + ')">' + esc(t('enableProtection')) + '</button>') +
+      '<span class="server-target">' + esc(sv.target || '') + '</span></div>').join('') + '</div>';
+  } else {
+    list = '<p class="muted">' + esc(t('noHttpDetected')) + '</p>';
+  }
+  let routeTable = '';
   if (routes.length) {
+    let rows = '';
     for (const r of routes) {
       rows += '<tr><td>' + esc(r.name) + '</td><td><code>' + esc(r.upstream) + '</code></td>' +
         '<td><span class="tag calm">' + esc(t('protected')) + '</span></td></tr>';
     }
-  } else {
-    rows = '<tr><td class="muted" colspan="3">' + esc(t('noRemote')) + '</td></tr>';
+    routeTable = '<table><tr><th>' + esc(t('colService')) + '</th><th>' + esc(t('colUpstream')) + '</th><th>' + esc(t('colState')) + '</th></tr>' + rows + '</table>';
   }
-  return '<div class="card"><div class="big">' + esc(t('tabRemote')) + '</div>' +
-    '<table><tr><th>' + esc(t('colService')) + '</th><th>' + esc(t('colUpstream')) + '</th><th>' + esc(t('colState')) + '</th></tr>' + rows + '</table>' +
-    '<div class="big" style="margin-top:16px">' + esc(t('addRemote')) + '</div>' +
-    '<div class="row"><input id="rname" placeholder="' + esc(t('phName')) + '">' +
-    '<input id="rurl" placeholder="https://host/mcp">' +
-    '<button class="btn-sm" onclick="doAddRemote()">' + esc(t('add')) + '</button></div>' +
-    '<p class="muted">' + esc(t('addRemoteHint')) + '</p>' +
-    '<p class="muted">' + esc(t('relayAddr')) + ' <code>http://' + esc(s.listen.host) + ':' + s.listen.port + '/&lt;name&gt;/&hellip;</code></p></div>';
+  return '<div class="card" id="url-setup"><div class="big">' + esc(t('tabRemote')) + '</div>' +
+    '<p class="muted">' + esc(t('remoteIntro')) + '</p>' + list +
+    '<details class="advanced-details"><summary>' + esc(t('manualRemote')) + '</summary>' +
+    '<div class="big" style="margin-top:12px">' + esc(t('addRemote')) + '</div>' +
+    '<div class="remote-step" id="remote-step1">' +
+    '<label class="remote-label" for="rname">' + esc(t('remoteNameLabel')) + '</label>' +
+    '<div class="row"><input id="rname" placeholder="my-mcp" autocomplete="off"></div>' +
+    '<div class="btns"><button class="btn-sm" onclick="remoteNext()">' + esc(t('remoteNext')) + '</button></div></div>' +
+    '<div class="remote-step" id="remote-step2" hidden>' +
+    '<label class="remote-label" for="rurl">' + esc(t('remoteUrlLabel')) + '</label>' +
+    '<div class="row"><input id="rurl" placeholder="https://host/mcp" autocomplete="off"></div>' +
+    '<div class="btns"><button class="btn-sm" onclick="remoteBack()">' + esc(t('remoteBack')) + '</button>' +
+    '<button class="btn-sm" onclick="remoteCreate()">' + esc(t('remoteCreate')) + '</button></div>' +
+    '<p id="remote-error" class="remote-error" role="alert"></p></div>' +
+    '<div class="remote-step" id="remote-step3" hidden>' +
+    '<label class="remote-label" for="remote-local-url">' + esc(t('remoteLocalLabel')) + '</label>' +
+    '<div class="row"><input id="remote-local-url" readonly>' +
+    '<button class="btn-sm" onclick="copyRemoteUrl(this)">' + esc(t('remoteCopy')) + '</button></div></div>' +
+    (routeTable ? '<div style="margin-top:16px">' + routeTable + '</div>' : '') +
+    '</details></div>';
 };
 
-window.setProtection = async (p) => { await api('/api/protection', { method: 'POST', body: JSON.stringify({ protection: p }) }); render(); };
+tabs.settings = () => {
+  const languageOptions = [['zh', '中文'], ['en', 'English']];
+  const themeOptions = [['light', t('themeLight')], ['dark', t('themeDark')], ['system', t('themeSystem')]];
+  return '<div class="card settings-card"><div class="settings-head">' +
+    '<button class="backbtn" type="button" onclick="leaveSettings()" aria-label="' + esc(t('back')) + '" title="' + esc(t('back')) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+    '<div><div class="big">' + esc(t('settingsTitle')) + '</div><p class="muted">' + esc(t('settingsHint')) + '</p></div></div>' +
+    '<div class="settings-section"><div class="settings-label">' + esc(t('settingsLanguage')) + '</div>' +
+    '<div class="switch" role="group" aria-label="' + esc(t('settingsLanguage')) + '">' +
+    languageOptions.map(([value, label]) => '<button class="' + (LANG === value ? 'on' : '') + '" onclick="setLang(&quot;' + value + '&quot;)">' + esc(label) + '</button>').join('') +
+    '</div></div>' +
+    '<div class="settings-section"><div class="settings-label">' + esc(t('settingsTheme')) + '</div>' +
+    '<div class="switch" role="group" aria-label="' + esc(t('settingsTheme')) + '">' +
+    themeOptions.map(([value, label]) => '<button class="' + (THEME === value ? 'on' : '') + '" onclick="setTheme(&quot;' + value + '&quot;)">' + esc(label) + '</button>').join('') +
+    '</div><p class="settings-note">' + esc(t('themeNote')) + '</p></div></div>';
+};
+window.setLang = (value) => {
+  if (value !== 'zh' && value !== 'en') return;
+  LANG = value;
+  try { localStorage.setItem('tw-lang', value); } catch (e) {}
+  paintChrome(); render();
+};
+window.setTheme = (value) => {
+  if (value !== 'light' && value !== 'dark' && value !== 'system') return;
+  THEME = value;
+  try { localStorage.setItem('tw-theme', value); } catch (e) {}
+  applyTheme(); paintChrome(); render();
+};
+window.leaveSettings = () => {
+  TAB = TAB_BEFORE_SETTINGS || 'status';
+  paintChrome(); render();
+};
+
+window.setProtection = async (p) => {
+  if (p !== 'observe' && p !== 'protect') return;
+  const current = document.querySelector('[data-mode="' + p + '"]');
+  if (current && current.classList.contains('on')) return;
+  const keepScroll = window.scrollY;
+  if (!(await uiConfirm(p === 'protect' ? t('confirmProtectMode') : t('confirmObserveMode')))) return;
+  try {
+    await api('/api/protection', { method: 'POST', body: JSON.stringify({ protection: p }) });
+    const s = await api('/api/status');
+    const on = s.protection === 'protect';
+    document.querySelectorAll('[data-mode]').forEach((button) => {
+      button.classList.toggle('on', button.dataset.mode === (on ? 'protect' : 'observe'));
+    });
+    const summary = document.querySelector('.mode-summary');
+    if (summary) summary.textContent = modeSummary(s);
+    updateLede(s);
+    const restoreScroll = () => { if (Math.abs(window.scrollY - keepScroll) > 1) window.scrollTo(0, keepScroll); };
+    restoreScroll();
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(restoreScroll);
+    setTimeout(restoreScroll, 60);
+    uiToast(on ? t('switchedProtect') : t('switchedObserve'), false);
+  } catch (error) {
+    uiToast(error.message, true);
+  }
+};
 let agentDetectVersion = 0;
 window.closeAgentPicker = () => { agentDetectVersion++; document.getElementById('agent-picker').close(); };
 window.openRemoteSetup = () => { window.closeAgentPicker(); TAB = 'remote'; paintChrome(); render(); };
@@ -782,10 +1164,10 @@ window.registerAgentConfigPath = async () => {
   const agentId = document.getElementById('agent-product').value;
   const path = document.getElementById('agent-config-path').value.trim();
   const result = await api('/api/register-agent-config', { method: 'POST', body: JSON.stringify({ agentId, path }) });
-  if (!result.ok) { alert(result.error || t('loadFailed')); return; }
+  if (!result.ok) { uiToast(result.error || t('loadFailed'), true); return; }
   window.detectSelectedAgent();
   render();
-  } catch (error) { alert(error.message); }
+  } catch (error) { uiToast(error.message, true); }
 };
 window.detectSelectedAgent = async () => {
   const version = ++agentDetectVersion;
@@ -798,13 +1180,72 @@ window.detectSelectedAgent = async () => {
     const detected = await api('/api/detect-agent?id=' + encodeURIComponent(id));
     if (version !== agentDetectVersion) return;
     const zh = LANG === 'zh';
-    const heading = detected.supported === false ? (zh ? '暂不支持自动读取此产品的 MCP 配置' : 'Automatic MCP configuration detection is not supported for this product yet') : !detected.exists ? (detected.installed ? (zh ? '已发现安装，还没有 MCP 配置' : 'Installation detected; no MCP configuration yet') : (zh ? '未发现安装或 MCP 配置' : 'No installation or MCP configuration detected')) : !detected.valid ? (zh ? '配置格式有误' : 'Invalid configuration') : !detected.servers.length ? (zh ? '已发现配置，还没有配置 MCP' : 'Configuration detected; no MCP configured') : (zh ? '识别到 ' + detected.servers.length + ' 个 MCP' : detected.servers.length + ' MCP channels found');
-    result.innerHTML = '<strong>' + esc(heading) + '</strong><div class="detect-path">' + esc(detected.path) + '</div>' +
-      (detected.servers?.length ? '<table><tbody>' + detected.servers.map(server => '<tr><td>' + esc(server.name) + (server.scope === 'project' ? '<div class="muted detect-path">' + esc(server.path) + '</div>' : '') + '</td><td>' + esc(server.kind === 'http' ? t('remoteService') : server.kind === 'stdio' ? t('localProgram') : t('unknown')) + '</td><td>' +
-        (server.wrapped ? '<span class="tag calm">' + esc(t('protected')) + '</span>' : ['http', 'stdio'].includes(server.kind) ? '<button class="btn-sm" onclick="doWrap(' + esc(JSON.stringify(server.hostId || id)) + ',' + esc(JSON.stringify(server.name)) + ')">' + esc(t('enableProtection')) + '</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '') +
-      (detected.supported === false ? '<p class="muted">' + (zh ? '如果它支持自定义 MCP：本机配置可在下方指定文件；远程服务可添加 HTTP 中转地址，再填回 Agent。接入完成前，这个产品不会受到保护。没有 MCP 设置的产品暂时无法接入。' : 'If this product supports custom MCP, select its local configuration file below, or add an HTTP relay and paste the relay URL into the Agent. Protection only applies after traffic is routed through SafeTripwire. Products without MCP settings cannot be connected yet.') + '</p><button class="btn-sm" onclick="openRemoteSetup()">' + (zh ? '设置 HTTP MCP 中转' : 'Set up HTTP MCP relay') + '</button>' : '');
+    const term = mcpTerm(id);
+    const heading = detected.supported === false ? (zh ? '暂不支持自动读取此产品的 ' + term + ' 配置' : 'Automatic ' + term + ' configuration detection is not supported for this product yet') : !detected.exists ? (detected.installed ? (zh ? '已发现安装，还没有 ' + term + ' 配置' : 'Installation detected; no ' + term + ' configuration yet') : (zh ? '未发现安装或 ' + term + ' 配置' : 'No installation or ' + term + ' configuration detected')) : !detected.valid ? (zh ? '配置格式有误' : 'Invalid configuration') : !detected.servers.length ? (zh ? '已发现配置，还没有配置 ' + term : 'Configuration detected; no ' + term + ' configured') : (zh ? '识别到 ' + detected.servers.length + ' 个 ' + term : detected.servers.length + ' ' + term + ' channel(s) found');
+    result.innerHTML = '<strong>' + esc(heading) + '</strong>' +
+      (detected.servers?.length ? '<table><tbody>' + detected.servers.map(server => '<tr><td>' + esc(serverNameLabel(server.hostId || id, server.name)) + '</td><td>' + esc(server.kind === 'http' ? t('remoteService') : server.kind === 'stdio' ? t('localProgram') : t('unknown')) + '</td><td>' +
+        (server.wrapped ? '<span class="tag calm">' + esc(t('protected')) + '</span>' : serverPreset(server.hostId || id, server.name)?.builtin ? '<span class="muted">' + esc(t('builtinNoAction')) + '</span>' : ['http', 'stdio'].includes(server.kind) ? '<button class="btn-sm" onclick="doWrap(' + esc(JSON.stringify(server.hostId || id)) + ',' + esc(JSON.stringify(server.name)) + ')">' + esc(t('enableProtection')) + '</button>' : '') + '</td></tr>').join('') + '</tbody></table>' : '') +
+      (detected.supported === false ? '<p class="muted">' + (zh ? '如果它支持自定义 ' + term + '：本机配置可在下方指定文件；远程服务可添加 HTTP 中转地址，再填回 Agent。接入完成前，这个产品不会受到保护。没有 ' + term + ' 设置的产品暂时无法接入。' : 'If this product supports custom ' + term + ', select its local configuration file below, or add an HTTP relay and paste the relay URL into the Agent. Protection only applies after traffic is routed through SafeTripwire. Products without ' + term + ' settings cannot be connected yet.') + '</p><button class="btn-sm" onclick="openRemoteSetup()">' + (zh ? '设置 HTTP ' + term + ' 中转' : 'Set up HTTP ' + term + ' relay') + '</button>' : '');
   } catch (error) {
     if (version === agentDetectVersion) result.textContent = t('loadFailed') + error.message;
+  }
+};
+window.remoteNext = () => {
+  const name = document.getElementById('rname')?.value.trim();
+  if (!name) { document.getElementById('rname')?.focus(); return; }
+  const step2 = document.getElementById('remote-step2');
+  if (step2) step2.hidden = false;
+  document.getElementById('rurl')?.focus();
+};
+window.remoteBack = () => {
+  const step1 = document.getElementById('remote-step1');
+  const step2 = document.getElementById('remote-step2');
+  const step3 = document.getElementById('remote-step3');
+  if (step1) step1.hidden = false;
+  if (step2) step2.hidden = true;
+  if (step3) step3.hidden = true;
+};
+window.remoteCreate = async () => {
+  const name = document.getElementById('rname')?.value.trim() || '';
+  const upstream = document.getElementById('rurl')?.value.trim() || '';
+  const error = document.getElementById('remote-error');
+  if (!name || !upstream) {
+    if (error) error.textContent = t('addRemoteEmpty');
+    return;
+  }
+  try {
+    const r = await api('/api/add-remote', { method: 'POST', body: JSON.stringify({ name, upstream }) });
+    if (!r.ok) {
+      if (error) error.textContent = r.error || t('unknown');
+      return;
+    }
+    if (error) error.textContent = '';
+    const local = document.getElementById('remote-local-url');
+    if (local) local.value = r.localUrl;
+    const step1 = document.getElementById('remote-step1');
+    const step2 = document.getElementById('remote-step2');
+    const step3 = document.getElementById('remote-step3');
+    if (step1) step1.hidden = true;
+    if (step2) step2.hidden = true;
+    if (step3) step3.hidden = false;
+  } catch (e) {
+    if (error) error.textContent = e.message;
+  }
+};
+window.copyRemoteUrl = (button) => {
+  const input = document.getElementById('remote-local-url');
+  if (!input || !input.value) return;
+  const done = () => {
+    if (!button) return;
+    const previous = button.textContent;
+    button.textContent = t('copied');
+    setTimeout(() => { button.textContent = previous; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(done).catch(() => { input.select(); done(); });
+  } else {
+    input.select();
+    done();
   }
 };
 window.doAddRemote = async () => {
@@ -812,37 +1253,37 @@ window.doAddRemote = async () => {
   const urlEl = document.getElementById('rurl');
   const name = nameEl ? nameEl.value.trim() : '';
   const upstream = urlEl ? urlEl.value.trim() : '';
-  if (!name || !upstream) { alert(t('addRemoteEmpty')); return; }
+  if (!name || !upstream) { uiToast(t('addRemoteEmpty'), true); return; }
   const r = await api('/api/add-remote', { method: 'POST', body: JSON.stringify({ name, upstream }) });
-  alert(r.ok ? (t('addRemoteOk') + r.localUrl) : (t('wrapFail') + (r.error || t('unknown'))));
+  uiToast(r.ok ? (t('addRemoteOk') + r.localUrl) : (t('wrapFail') + (r.error || t('unknown'))), !r.ok);
   if (r.ok) render();
 };
 
 window.doRevertAll = async () => {
-  if (!confirm(t('confirmRevertAll'))) return;
+  if (!(await uiConfirm(t('confirmRevertAll')))) return;
   const r = await api('/api/revert-all', { method: 'POST', body: JSON.stringify({ confirm: true }) });
-  alert(r.ok ? (t('revertAllDone') + (r.reverted || []).join(', ')) : (t('wrapFail') + (r.error || t('unknown'))));
+  uiToast(r.ok ? (t('revertAllDone') + (r.reverted || []).join(', ')) : (t('wrapFail') + (r.error || t('unknown'))), !r.ok);
   if (r.ok) render();
 };
 
 window.doProtectAll = async () => {
-  if (!confirm(t('confirmProtectAll'))) return;
+  if (!(await uiConfirm(t('confirmProtectAll')))) return;
   const r = await api('/api/protect-all', { method: 'POST', body: JSON.stringify({ confirm: true }) });
-  alert(r.ok ? (t('protectAllDone') + r.applied) : (t('wrapFail') + (r.error || t('unknown'))));
+  uiToast(r.ok ? (t('protectAllDone') + r.applied) : (t('wrapFail') + (r.error || t('unknown'))), !r.ok);
   if (r.ok) render();
 };
 window.openFolder = async (which) => {
   try {
     const r = await api('/api/open-folder', { method: 'POST', body: JSON.stringify({ which }) });
-    if (!r || r.ok !== true) alert(t('openFolderFailed') + ' ' + ((r && r.path) || ''));
+    if (!r || r.ok !== true) uiToast(t('openFolderFailed') + ' ' + ((r && r.path) || ''), true);
   } catch (e) {
-    alert(t('openFolderFailed') + ' ' + e.message);
+    uiToast(t('openFolderFailed') + ' ' + e.message, true);
   }
 };
 window.doWrap = async (host, server) => {
-  if (!confirm(t('confirmWrap').replace('{0}', server))) return;
+  if (!(await uiConfirm(t('confirmWrap').replace('{0}', server)))) return;
   const r = await api('/api/wrap', { method: 'POST', body: JSON.stringify({ host, server, confirm: true }) });
-  alert(r.ok ? t('wrappedOk') : t('wrapFail') + (r.error || t('unknown')));
+  uiToast(r.ok ? t('wrappedOk') : t('wrapFail') + (r.error || t('unknown')), !r.ok);
   if (r.ok) {
     const picker = document.getElementById('agent-picker');
     if (picker.open) window.detectSelectedAgent();
@@ -850,9 +1291,9 @@ window.doWrap = async (host, server) => {
   }
 };
 window.doRestore = async (host) => {
-  if (!confirm(t('confirmRestore'))) return;
+  if (!(await uiConfirm(t('confirmRestore')))) return;
   const r = await api('/api/restore-backup', { method: 'POST', body: JSON.stringify({ host, confirm: true }) });
-  alert(r.ok ? t('restoredOk') : t('wrapFail') + (r.error || t('unknown')));
+  uiToast(r.ok ? t('restoredOk') : t('wrapFail') + (r.error || t('unknown')), !r.ok);
   if (r.ok) render();
 };
 
@@ -881,7 +1322,14 @@ function updateLede() {
 function paintChrome() {
   document.documentElement.lang = LANG;
   updateLede();
-  $('#langbtn').textContent = LANG === 'zh' ? 'EN' : '中文';
+  const gear = $('#settingsbtn');
+  if (gear) {
+    gear.style.display = TAB === 'settings' ? 'none' : '';
+    gear.classList.toggle('on', TAB === 'settings');
+    gear.setAttribute('aria-label', t('settingsTitle'));
+    gear.setAttribute('title', t('settingsTitle'));
+    gear.setAttribute('aria-pressed', TAB === 'settings' ? 'true' : 'false');
+  }
   $('#nav').innerHTML = TABS.map((k) =>
     \`<button data-tab="\${k}" class="\${k === TAB ? 'on' : ''}">\${esc(t(TAB_LABEL[k]))}</button>\`).join('');
   document.querySelectorAll('nav button').forEach((b) => {
@@ -911,11 +1359,19 @@ async function render() {
   if (generation === renderGeneration) $('#main').innerHTML = html;
 }
 
-$('#langbtn').onclick = () => {
-  LANG = LANG === 'zh' ? 'en' : 'zh';
-  try { localStorage.setItem('tw-lang', LANG); } catch (e) {}
+$('#settingsbtn').onclick = () => {
+  if (TAB === 'settings') return;
+  TAB_BEFORE_SETTINGS = TAB;
+  TAB = 'settings';
   paintChrome(); render();
 };
+
+if (window.matchMedia) {
+  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSystemThemeChange = () => { if (THEME === 'system') applyTheme(); };
+  if (systemTheme.addEventListener) systemTheme.addEventListener('change', onSystemThemeChange);
+  else if (systemTheme.addListener) systemTheme.addListener(onSystemThemeChange);
+}
 
 let lastTouch = Date.now();
 ['click', 'keydown', 'input', 'change'].forEach(function (ev) {
@@ -961,7 +1417,6 @@ function autoRefresh() {
 
 paintChrome();
 render();
-setTimeout(() => { const startup = document.getElementById('startup'); if (startup) startup.remove(); }, 800);
 setInterval(autoRefresh, 10000);
 </script></body></html>`.split('__STARTED__').join(stamp);
 }

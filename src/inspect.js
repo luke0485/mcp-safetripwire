@@ -1,6 +1,6 @@
 import { evaluateToolsList } from './evaluate.js';
 import { decide } from './policy.js';
-import { appendDecoys, isDecoy, findCanary } from './deception.js';
+import { appendDecoys, isDecoy, findCanary, CANARY } from './deception.js';
 import { checkArguments } from './blacklist.js';
 import { argKeys, destinationsOf } from './baseline.js';
 import { log } from './log.js';
@@ -14,6 +14,15 @@ import { loadAdvanced, advancedDecision } from './advanced.js';
 // makes "covers all MCP connection types" true rather than aspirational.
 
 const SENSITIVE_METHODS = new Set(['resources/read', 'prompts/get', 'sampling/createMessage']);
+// Server -> client requests that pull the model or the client into a flow.
+// They are logged explicitly; content inspection is not possible at this layer.
+const SERVER_SENSITIVE_METHODS = new Set(['sampling/createMessage', 'elicitation/create', 'roots/list']);
+// A manifest far larger than any real server is treated as malformed: it keeps
+// the per-connection scan bounded and prevents a response from wedging the
+// single-threaded proxy.
+const MAX_TOOLS = 1000;
+const MAX_LOGGED_ARG_KEYS = 200;
+const MAX_LOGGED_DESTINATIONS = 100;
 
 function shortParams(params) {
   if (!params || typeof params !== 'object') return undefined;
@@ -24,11 +33,12 @@ function shortParams(params) {
   return Object.keys(out).length ? out : undefined;
 }
 
-export function createInspector({ name, getPin, policy, posture, getPosture, getAdvanced = loadAdvanced, transport = 'stdio', recordPending }) {
+export function createInspector({ name, getPin, policy, posture, getPosture, getAdvanced = loadAdvanced, transport = 'stdio', recordPending, canary }) {
   // Deception is on by default in protect mode: if you asked for active defence,
   // you get traps. An explicit policy value overrides either way.
   let observedTools = null;
   let invalidManifest = false;
+  const activeCanary = canary || CANARY;
   const currentPosture = () => getPosture?.() ?? posture;
   const deceptionEnabled = (mode) => policy.deception == null ? mode === 'block' : policy.deception === true;
 
@@ -99,7 +109,7 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
             };
           }
         }
-        if (deceptionOn && findCanary(JSON.stringify(msg.params ?? {}))) {
+        if (deceptionOn && findCanary(JSON.stringify(msg.params ?? {}), activeCanary)) {
           log('critical', 'canary-exfil', {
             name,
             transport,
@@ -137,15 +147,20 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
           }
         }
         // Derived facts only: field names and destination hosts, never values.
-        // This is what the behavioural baseline is built from.
+        // This is what the behavioural baseline is built from. Both are capped
+        // so one hostile call cannot produce an oversized audit record.
+        const keys = argKeys(msg.params);
+        const destinations = destinationsOf(msg.params);
         log(action === 'block' ? 'critical' : 'info', 'tools-call', {
           name,
           transport,
           tool: toolName,
           action,
           reason,
-          argKeys: argKeys(msg.params),
-          destinations: destinationsOf(msg.params),
+          argKeys: keys.slice(0, MAX_LOGGED_ARG_KEYS).map((key) => key.slice(0, 200)),
+          argKeyCount: keys.length,
+          destinations: destinations.slice(0, MAX_LOGGED_DESTINATIONS),
+          destinationCount: destinations.length,
         });
         if (action === 'block') {
           return {
@@ -167,7 +182,11 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
       const posture = currentPosture();
       const deceptionOn = deceptionEnabled(posture);
       if (msg?.method) {
-        log('info', 'server-notification', { name, transport, method: msg.method });
+        if (SERVER_SENSITIVE_METHODS.has(msg.method)) {
+          log('info', 'sensitive-request', { name, transport, method: msg.method, direction: 'server', params: shortParams(msg.params) });
+        } else {
+          log('info', 'server-notification', { name, transport, method: msg.method });
+        }
         return;
       }
       if (!method) return;
@@ -178,17 +197,22 @@ export function createInspector({ name, getPin, policy, posture, getPosture, get
       if (msg.error) return;
       const tools = msg.result?.tools;
       const names = new Set();
-      const malformed = !Array.isArray(tools) || tools.some(tool => {
+      const malformed = !Array.isArray(tools) || tools.length > MAX_TOOLS || tools.some(tool => {
         if (!tool || typeof tool.name !== 'string' || !tool.name || names.has(tool.name)
-          || (tool.description !== undefined && typeof tool.description !== 'string')
-          || (tool.inputSchema !== undefined && (!tool.inputSchema || typeof tool.inputSchema !== 'object' || Array.isArray(tool.inputSchema)))) return true;
+          || (tool.description != null && typeof tool.description !== 'string')
+          || (tool.title != null && typeof tool.title !== 'string')
+          || (tool.inputSchema !== undefined && (!tool.inputSchema || typeof tool.inputSchema !== 'object' || Array.isArray(tool.inputSchema)))
+          || (tool.outputSchema != null && (typeof tool.outputSchema !== 'object' || Array.isArray(tool.outputSchema)))
+          || (tool.annotations != null && (typeof tool.annotations !== 'object' || Array.isArray(tool.annotations)))
+          || (tool._meta != null && (typeof tool._meta !== 'object' || Array.isArray(tool._meta)))) return true;
         names.add(tool.name); return false;
       });
-      invalidManifest = malformed || msg.result.nextCursor !== undefined;
+      const paginated = msg.result.nextCursor !== undefined && msg.result.nextCursor !== null && msg.result.nextCursor !== '';
+      invalidManifest = malformed || paginated;
       if (invalidManifest) {
         observedTools = null;
         delete msg.result;
-        msg.error = { code: -32009, message: 'mcp-safetripwire: invalid or paginated tool manifest; complete review is required' };
+        msg.error = { code: -32009, message: 'mcp-safetripwire: invalid, oversized or paginated tool manifest; complete review is required' };
         return;
       }
 

@@ -13,8 +13,9 @@ test('legacy correction removes known false alerts and retains real payload and 
     { event: 'audit-chain-broken', level: 'critical', reason: 'content hash mismatch: a record was edited' },
   ]);
   assert.equal(removed, 3);
-  assert.equal(reclassified, 2);
+  assert.equal(reclassified, 1);
   assert.equal(records.find(record => record.event === 'argument-blocked').level, 'critical');
+  assert.equal(records.find(record => record.reason?.includes('edited')).level, 'critical');
   assert.ok(records.some(record => record.reason?.includes('edited')));
   assert.equal(verifyChain(records).ok, true);
 });

@@ -1,3 +1,8 @@
+import { randomBytes } from 'node:crypto';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { dataDir } from './paths.js';
+
 // Deception: traps that no legitimate workflow would ever touch.
 //
 // Why this is the purest form of proactive defence: we are not guessing at
@@ -27,7 +32,27 @@ export const DEFAULT_DECOYS = [
   },
 ];
 
+// Kept as the deterministic default for tests and the offline lab. A real
+// installation plants a per-user random value via loadCanary().
 export const CANARY = 'TRIPWIRE-CANARY-7f3a91c2-do-not-use';
+
+export function loadCanary(dir = dataDir()) {
+  const path = join(dir, 'canary.txt');
+  try {
+    const existing = readFileSync(path, 'utf8').trim();
+    if (/^TRIPWIRE-CANARY-[0-9a-f]{16,}$/.test(existing)) return existing;
+  } catch {
+    /* first run, or unreadable: create a fresh value */
+  }
+  const value = 'TRIPWIRE-CANARY-' + randomBytes(16).toString('hex');
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(path, value + '\n', { mode: 0o600 });
+  } catch {
+    /* an unwritable data dir still gets a session canary */
+  }
+  return value;
+}
 
 export function decoyTools(decoys = DEFAULT_DECOYS) {
   return decoys.map((d) => ({ ...d, inputSchema: { ...(d.inputSchema ?? { type: 'object' }) } }));

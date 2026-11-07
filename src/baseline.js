@@ -1,5 +1,6 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { readProtectedJson, writeProtectedJson } from './integritystore.js';
 
 // Behavioural baseline.
 //
@@ -135,10 +136,12 @@ export function defaultBaselinePath(dataDir) {
 
 export function loadBaseline(path) {
   try {
-    if (!existsSync(path)) return null;
-    const parsed = JSON.parse(readFileSync(path, 'utf8'));
+    if (!existsSync(path) && !existsSync(path + '.key')) return null;
+    const parsed = readProtectedJson(path, { channels: null });
     return parsed.channels ?? null;
   } catch {
+    // A rejected baseline is advisory data; the next save is also refused by
+    // writeProtectedJson, so a tampered file is never silently overwritten.
     return null;
   }
 }
@@ -146,7 +149,7 @@ export function loadBaseline(path) {
 export function saveBaseline(map, path) {
   try {
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, JSON.stringify({ savedAt: new Date().toISOString(), channels: map }, null, 2) + '\n');
+    writeProtectedJson(path, { channels: map });
     return true;
   } catch {
     return false;

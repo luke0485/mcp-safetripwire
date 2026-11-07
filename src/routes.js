@@ -41,6 +41,14 @@ export function defaultListen() {
   return { host: '127.0.0.1', port: 8788 };
 }
 
+// The local relay is deliberately pinned to one IPv4 loopback address. Using
+// localhost/::1 in generated URLs makes clients and the listener disagree on
+// which loopback endpoint they mean.
+function pinnedListen(listen) {
+  const port = Number.isInteger(listen?.port) && listen.port >= 0 ? listen.port : 8788;
+  return { host: '127.0.0.1', port };
+}
+
 // The local URL the host config should point at, replacing the real one.
 export function localUrlFor(listen, name, upstreamUrl) {
   const u = new URL(upstreamUrl);
@@ -74,7 +82,7 @@ export function loadRoutes(path) {
     if (!verifyRoutes(path, parsed)) throw new Error('Remote configuration integrity check failed');
     rejected.delete(path);
     return {
-      listen: { ...defaultListen(), ...(parsed.listen ?? {}) },
+      listen: pinnedListen({ ...defaultListen(), ...(parsed.listen ?? {}) }),
       servers: parsed.servers ?? {},
     };
   } catch (err) {
@@ -95,7 +103,7 @@ export function saveRoutes(path, routes) {
     const previous = JSON.parse(readFileSync(path, 'utf8'));
     if (!verifyRoutes(path, previous)) throw new Error('Remote configuration was changed outside Tripwire');
   }
-  const body = JSON.parse(JSON.stringify({ listen: { ...defaultListen(), ...routes.listen }, servers: routes.servers ?? {} }));
+  const body = JSON.parse(JSON.stringify({ listen: pinnedListen({ ...defaultListen(), ...routes.listen }), servers: routes.servers ?? {} }));
   const estimate = JSON.stringify({ ...body, integrity: { version: 1, signature: '0'.repeat(64) } }, null, 2) + '\n';
   if (Buffer.byteLength(estimate) > 1024 * 1024) throw new Error('Remote configuration exceeds 1 MiB');
   mkdirSync(dirname(path), { recursive: true });

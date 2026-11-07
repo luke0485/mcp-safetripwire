@@ -34,6 +34,7 @@ export const AGENT_CATALOG = [
   { id: 'pi', vendor: 'Pi', label: 'Pi Agent', icon: 'pi', format: 'json' },
   { id: 'command-code', vendor: 'Command Code', label: 'Command Code', icon: 'command-code', format: 'json' },
   { id: 'codex', vendor: 'OpenAI', label: 'Codex', icon: 'codex', format: 'toml' },
+  { id: 'deepseek-harness', vendor: 'DeepSeek', label: 'DeepSeek Harness', icon: 'deepseek-harness' },
   { id: 'cursor', vendor: 'Anysphere', label: 'Cursor', icon: 'cursor', format: 'json' },
   { id: 'claude-desktop', vendor: 'Anthropic', label: 'Claude Desktop', icon: 'claude-desktop', format: 'json' },
   { id: 'trae', vendor: 'ByteDance', label: 'TRAE CLI', icon: 'trae', format: 'toml' },
@@ -290,6 +291,9 @@ export function wrappedCommand({ launcher, name, command, args, statePath, logPa
 }
 
 export function planWrap({ host, serverName, launcher, statePath, logPath, enforce, listen = defaultListen() }) {
+  if (enforce !== undefined && enforce !== null && !['warn', 'strip', 'block'].includes(enforce)) {
+    return { ok: false, reason: `enforce must be warn, strip or block (got "${enforce}")` };
+  }
   // A different Agent or project can use the same MCP name. Keep their pins
   // and HTTP routes independent instead of overwriting another channel.
   const channelName = host.id ? host.id + '::' + serverName : serverName;

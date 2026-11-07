@@ -18,10 +18,10 @@ import { isJsonRpc } from './sse.js';
 // `onServerMessage` observes/mutates responses; it is told which method the
 // response belongs to.
 
-export function createProxy({ name, command, args, onHostMessage, onServerMessage, onExit }) {
+export function createProxy({ name, command, args, onHostMessage, onServerMessage, onExit, env }) {
   let child;
   try {
-    child = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true });
+    child = spawn(command, args, { stdio: ['pipe', 'pipe', 'inherit'], windowsHide: true, env: env ? { ...process.env, ...env } : process.env });
   } catch (err) {
     log('critical', 'spawn-failed', { name, command, error: String(err) });
     process.exit(127);

@@ -14,7 +14,15 @@ import { classifyTools } from './risk.js';
 //   { kind: 'block', reason, tools? }        replace the response with an error
 
 function toolNameFromWhere(where) {
-  return String(where).replace(/^tool:/, '').replace(/\.(description|inputSchema)$/, '');
+  // Findings point at a field of a tool: tool:<name>.<field>. Tool names may
+  // themselves contain dots, so prefer the last known suffix rather than a
+  // naive split.
+  const text = String(where ?? '');
+  if (!text.startsWith('tool:')) return text;
+  const body = text.slice(5);
+  const suffix = ['.name', '.title', '.description', '.inputSchema', '.outputSchema', '.annotations', '._meta']
+    .find((ending) => body.endsWith(ending));
+  return suffix ? body.slice(0, -suffix.length) : body;
 }
 
 export function evaluateToolsList(tools, { pinHash = null, posture = 'warn' } = {}) {

@@ -98,6 +98,10 @@ try {
     }
     if ($LASTEXITCODE -ne 0) { Write-Host '  (rcedit failed; the exe still works, it just lacks metadata)' }
     Write-Host 'Note: SEA does not embed a Windows icon; use rcedit on the exe to set assets\logo.ico.'
+
+    Write-Host 'Building native WebView2 panel...'
+    & (Join-Path $PSScriptRoot 'build-panel.ps1')
+    if ($LASTEXITCODE -ne 0) { throw "Panel build failed ($LASTEXITCODE)" }
 }
 finally {
     Pop-Location

@@ -10,11 +10,32 @@ import { acquireLogLock } from './log.js';
 //
 // This is TOFU (trust on first use), the same idea as a package lockfile.
 
+// Canonical JSON: object keys are sorted recursively so two semantically equal
+// schemas hash the same even if a server serialises its keys in another order.
+// Arrays keep their order because order is meaningful in JSON Schema.
+function canonicalValue(value) {
+  if (Array.isArray(value)) return value.map(canonicalValue);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const key of Object.keys(value).sort()) out[key] = canonicalValue(value[key]);
+    return out;
+  }
+  return value;
+}
+
+// A tool's security-relevant surface is more than name/description/inputSchema.
+// `title`, `annotations` (readOnlyHint/destructiveHint), `outputSchema` and
+// `_meta` can all influence how a client presents or auto-approves a tool, so
+// they are part of the pinned identity too.
 function canonicalTool(tool) {
   return {
     name: tool?.name ?? '',
+    title: tool?.title ?? null,
     description: tool?.description ?? '',
-    inputSchema: tool?.inputSchema ?? null,
+    inputSchema: canonicalValue(tool?.inputSchema ?? null),
+    outputSchema: canonicalValue(tool?.outputSchema ?? null),
+    annotations: canonicalValue(tool?.annotations ?? null),
+    meta: canonicalValue(tool?._meta ?? null),
   };
 }
 

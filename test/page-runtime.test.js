@@ -46,6 +46,8 @@ function fakeElement(id) {
     showModal() { this.open = true; },
     close() { this.open = false; },
     remove() { this.removed = true; },
+    setAttribute(name, value) { this[name] = value; },
+    getAttribute(name) { return this[name]; },
     classList: { toggle() {}, add() {}, remove() {} },
   };
 }
@@ -64,7 +66,7 @@ function makeEnv() {
     },
     querySelectorAll() { return []; },
     addEventListener() {},
-    documentElement: { lang: '' },
+    documentElement: { lang: '', setAttribute(name, value) { this[name] = value; }, getAttribute(name) { return this[name]; } },
   };
   const window = { addEventListener() {} };
   const localStorage = { getItem() { return null; }, setItem() {} };
@@ -75,8 +77,10 @@ function makeEnv() {
 }
 
 function scriptOf(html) {
-  const a = html.indexOf('<script>');
+  // The page starts with a tiny theme bootstrap script; the application script
+  // is the last one, so extract that instead of spanning both blocks.
   const b = html.lastIndexOf('</script>');
+  const a = html.lastIndexOf('<script>', b);
   return html.substring(a + 8, b);
 }
 

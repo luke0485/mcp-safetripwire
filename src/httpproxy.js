@@ -76,7 +76,7 @@ function sendUpstream(upstream, { method, path, headers, body }, onResponse, onE
   return req;
 }
 
-export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdvanced, statePath = defaultStatePath(), defaultPosture = 'warn' }) {
+export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdvanced, statePath = defaultStatePath(), defaultPosture = 'warn', onFatal }) {
   if (listen.host !== '127.0.0.1' && listen.host !== '::1') throw new Error('HTTP relay must listen on loopback');
   const sessions = new Map();
   let activeRequests = 0;
@@ -91,7 +91,9 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
       policy,
       getAdvanced,
       posture: entry.posture ?? defaultPosture,
-      getPosture: () => getPosture?.() ?? entry.posture ?? defaultPosture,
+      // An explicit per-route posture (written by `install --enforce ...`) must
+      // win over the global mode; otherwise the CLI setting is silently lost.
+      getPosture: () => entry.posture ?? getPosture?.() ?? defaultPosture,
       transport: 'http',
       recordPending: (hash, count) => {
         updateState(perServerState, state => setPending(state, name, hash, count));
@@ -191,7 +193,12 @@ export function createHttpProxy({ listen, routes, getRoutes, getPosture, getAdva
     return handlePassthrough(req, res, ctx);
   });
 
-  server.on('error', (err) => log('critical', 'http-proxy-error', { error: String(err) }));
+  server.on('error', (err) => {
+    log('critical', 'http-proxy-error', { error: String(err) });
+    // A relay that failed to bind is not protecting anything. The CLI turns
+    // this into a nonzero exit; library callers can supply their own handler.
+    onFatal?.(err);
+  });
   server.maxConnections = MAX_HTTP_CONNECTIONS;
   const cleanup = setInterval(sweep, 30000);
   cleanup.unref();

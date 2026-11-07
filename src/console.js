@@ -85,9 +85,13 @@ export function htmlEscape(value) {
 }
 
 const LOG_TAIL_BYTES = 512 * 1024;
+// The console may be started with --log; every read (activity, audit checks,
+// baseline) must use the same file rather than silently falling back to the
+// default path.
+let activeLogPath = defaultLogPath();
 
 function readActivity(limit) {
-  const path = defaultLogPath();
+  const path = activeLogPath;
   if (!existsSync(path)) return { path, events: [] };
   try {
     // Read only the tail. Reading and splitting the whole file on every poll is
@@ -151,7 +155,7 @@ function buildStatus() {
     integrityErrors: [settings.integrityError, state.integrityError, routes.integrityError].filter(Boolean),
     platform: `${platform()} ${release()}`,
     dataDir: dataDir(),
-    logPath: defaultLogPath(),
+    logPath: activeLogPath,
     projectRoot: PROJECT_ROOT,
     pinned,
     routes: Object.entries(routes.servers ?? {}).map(([name, entry]) => ({ name, upstream: entry.upstream })),
@@ -232,6 +236,19 @@ function latestBackup(configPath) {
   }
 }
 
+// Restoring an enrolment backup can overwrite edits made afterwards. Keep a
+// copy of the current file first so the user can recover their newer changes.
+function preserveCurrent(configPath) {
+  try {
+    if (!existsSync(configPath)) return null;
+    const dest = `${configPath}.tripwire-before-restore-${Date.now()}`;
+    copyFileSync(configPath, dest);
+    return dest;
+  } catch {
+    return null;
+  }
+}
+
 const COOKIE_NAME = 'tripwire_token';
 
 function readCookie(req, name) {
@@ -240,39 +257,85 @@ function readCookie(req, name) {
   for (const part of String(raw).split(';')) {
     const eq = part.indexOf('=');
     if (eq === -1) continue;
-    if (part.slice(0, eq).trim() === name) return decodeURIComponent(part.slice(eq + 1).trim());
+    if (part.slice(0, eq).trim() !== name) continue;
+    try {
+      return decodeURIComponent(part.slice(eq + 1).trim());
+    } catch {
+      // A malformed percent escape must be treated as an invalid cookie, not
+      // as an uncaught exception that terminates the console.
+      return null;
+    }
   }
   return null;
 }
 
-export function createConsole({ listen, token, host = '127.0.0.1' }) {
-  setLogFile(defaultLogPath());
+// One-time login codes: the browser is opened with ?code=..., which is
+// single-use and expires. The long-lived token stays in the token file / cookie
+// and is never placed in a browser command line or history.
+export const BOOTSTRAP_TTL_MS = 5 * 60 * 1000;
+const MAX_BOOTSTRAP_CODES = 32;
+
+function issueBootstrapCode(codes) {
+  const now = Date.now();
+  for (const [code, expires] of codes) if (expires <= now) codes.delete(code);
+  while (codes.size >= MAX_BOOTSTRAP_CODES) codes.delete(codes.keys().next().value);
+  const code = newToken();
+  codes.set(code, now + BOOTSTRAP_TTL_MS);
+  return code;
+}
+
+export function createConsole({ listen, token, host = '127.0.0.1', logPath = defaultLogPath(), bootstrapCodes = new Map() }) {
+  activeLogPath = logPath;
+  setLogFile(logPath);
   // Stamped into the page so a stale window is obvious at a glance.
   // Local time, not UTC: an ISO string shows the wrong hour to the user.
   const startedAtText = new Date().toLocaleString('sv-SE', { hour12: false });
 
   const server = createServer((req, res) => {
-    if (!hostAllowed(req.headers.host, listen)) {
+    // `listen.port` may be 0 in tests or embedded use; compare against the
+    // actual bound port once the server is listening.
+    const bound = { ...listen, port: server.address()?.port ?? listen.port };
+    if (!hostAllowed(req.headers.host, bound)) {
       res.writeHead(403, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ error: 'forbidden host' }));
       return;
     }
-    if (!originAllowed(req.headers.origin, listen)) {
+    if (!originAllowed(req.headers.origin, bound)) {
       res.writeHead(403, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ error: 'forbidden origin' }));
       return;
     }
 
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const queryToken = url.searchParams.get('token');
-    const headerToken = req.headers['x-tripwire-token'];
-    const cookieToken = readCookie(req, COOKIE_NAME);
+    let url;
+    let queryToken;
+    let headerToken;
+    let cookieToken;
+    try {
+      url = new URL(req.url, `http://${req.headers.host}`);
+      queryToken = url.searchParams.get('token');
+      headerToken = req.headers['x-tripwire-token'];
+      cookieToken = readCookie(req, COOKIE_NAME);
+    } catch {
+      // Malformed request target or cookie encoding: reject it instead of
+      // letting an uncaught exception take down the whole console.
+      res.writeHead(400, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ error: 'bad request' }));
+      return;
+    }
+
+    // A one-time code is accepted for the initial navigation. It is deleted on
+    // first use and expires quickly, so the long-lived token never has to be
+    // placed in a browser command line or its history.
+    const code = url.searchParams.get('code');
+    const codeExpires = code ? bootstrapCodes.get(code) : undefined;
+    const bootstrapValid = typeof codeExpires === 'number' && codeExpires > Date.now();
+    if (bootstrapValid) bootstrapCodes.delete(code);
 
     // Accept the token once via the URL, then hand out an HttpOnly cookie and
     // redirect. After that the page's own JavaScript never touches the token,
     // so a hostile local page cannot read it and CSRF is already blocked by the
     // Origin check.
-    const authed = tokenMatches(queryToken, token) || tokenMatches(headerToken, token) || tokenMatches(cookieToken, token);
+    const authed = bootstrapValid || tokenMatches(queryToken, token) || tokenMatches(headerToken, token) || tokenMatches(cookieToken, token);
 
     if (url.pathname === '/' || url.pathname === '/index.html') {
       if (!authed) {
@@ -280,7 +343,7 @@ export function createConsole({ listen, token, host = '127.0.0.1' }) {
         res.end('打不开 / Cannot open: the access token is missing or wrong.\n');
         return;
       }
-      if (tokenMatches(queryToken, token) && !tokenMatches(cookieToken, token)) {
+      if ((bootstrapValid || tokenMatches(queryToken, token)) && !tokenMatches(cookieToken, token)) {
         res.writeHead(302, {
           location: '/',
           'set-cookie': `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/`,
@@ -301,7 +364,7 @@ export function createConsole({ listen, token, host = '127.0.0.1' }) {
     }
 
     try {
-      handleApi(req, res, url);
+      handleApi(req, res, url, { bootstrapCodes });
     } catch (err) {
       log('critical', 'api-error', { path: url.pathname, error: String(err) });
       try { sendJson(res, 500, { error: 'internal error' }); } catch { /* response already gone */ }
@@ -529,7 +592,11 @@ export function openBrowser(url, { appWindow = true } = {}) {
   return 'browser';
 }
 
-function handleApi(req, res, url) {
+function handleApi(req, res, url, { bootstrapCodes }) {
+    if (req.method === 'POST' && url.pathname === '/api/bootstrap') {
+      const code = issueBootstrapCode(bootstrapCodes);
+      return sendJson(res, 200, { code, expiresIn: Math.floor(BOOTSTRAP_TTL_MS / 1000) });
+    }
     if (req.method === 'POST' && url.pathname === '/api/register-agent-config') {
       return readJsonBody(req).then(body => {
         const result = registerAgentConfig({ agentId: body.agentId, path: body.path });
@@ -606,9 +673,10 @@ function handleApi(req, res, url) {
       if (body.confirm !== true) return sendJson(res, 400, { error: 'confirmation required' });
       const backup = latestBackup(host.path);
       if (!backup) return sendJson(res, 400, { error: '还没有备份' });
+      const safety = preserveCurrent(host.path);
       copyFileSync(backup, host.path);
-      log('warn', 'console-restore', { host: body.host, backup });
-      return sendJson(res, 200, { ok: true, restoredFrom: backup });
+      log('warn', 'console-restore', { host: body.host, backup, safety });
+      return sendJson(res, 200, { ok: true, restoredFrom: backup, safety });
     }).catch((err) => sendJson(res, 400, { error: err.message }));
   }
 
@@ -650,7 +718,12 @@ function handleApi(req, res, url) {
       for (const host of knownHosts()) {
         const backup = latestBackup(host.path);
         if (!backup) continue;
-        try { copyFileSync(backup, host.path); reverted.push(host.id); } catch { /* leave it */ }
+        try {
+          const safety = preserveCurrent(host.path);
+          copyFileSync(backup, host.path);
+          reverted.push(host.id);
+          log('info', 'console-restore-safety', { host: host.id, safety });
+        } catch { /* leave it */ }
       }
       const routesPath = defaultRoutesPath();
       const routes = loadRoutes(routesPath);

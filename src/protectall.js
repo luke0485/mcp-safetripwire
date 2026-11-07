@@ -19,12 +19,12 @@ export function enrollServer({ hostId, name, launcher, listen = defaultListen(),
 
 // Register the route before redirecting the host. If config writing fails,
 // restore the previous routes so an unsuccessful enrolment is reversible.
-export function applyEnrollment({ host, name, plan, listen = defaultListen(), routesPath = defaultRoutesPath() }) {
+export function applyEnrollment({ host, name, plan, listen = defaultListen(), routesPath = defaultRoutesPath(), routeExtra = {} }) {
   const previous = loadRoutes(routesPath);
   if (plan.kind === 'http') {
     const routes = structuredClone(previous);
     routes.listen = listen;
-    routes.servers[plan.channelName || name] = { ...plan.route };
+    routes.servers[plan.channelName || name] = { ...plan.route, ...routeExtra };
     saveRoutes(routesPath, routes);
   }
   try {
@@ -42,11 +42,15 @@ export function applyEnrollment({ host, name, plan, listen = defaultListen(), ro
 
 export function protectAll({ launcher, listen = defaultListen(), enforce, write = false }) {
   const results = [];
-  const routes = loadRoutes(defaultRoutesPath());
-  let routesChanged = false;
+  const routesPath = defaultRoutesPath();
+  const routes = loadRoutes(routesPath);
 
   const seen = new Set();
   for (const item of enumerateServers()) {
+    // Codex's node_repl is its built-in Computer Use runtime, not a user MCP.
+    // Wrapping it would replace the runtime launch line and break Codex, so
+    // bulk enrolment deliberately leaves it alone.
+    if (item.hostId === 'codex' && item.name === 'node_repl') continue;
     if (isProtectedServer(item.info, routes)) continue;
     const host = knownHosts().find((h) => h.id === item.hostId);
     if (!host) continue;
@@ -64,22 +68,22 @@ export function protectAll({ launcher, listen = defaultListen(), enforce, write 
       continue;
     }
 
-    const res = applyWrap({ host, serverName: item.name, wrapped: plan.wrapped });
+    // Route-first, per server: if writing the host config fails, the route is
+    // rolled back. Doing all wraps first and saving routes at the very end left
+    // broken local URLs behind when the route save failed.
+    let res;
+    try {
+      res = applyEnrollment({ host, name: item.name, plan, listen, routesPath });
+    } catch (err) {
+      results.push({ host: item.hostId, name: item.name, ok: false, reason: err.message });
+      continue;
+    }
     if (!res.ok) {
       results.push({ host: item.hostId, name: item.name, ok: false, reason: res.reason });
       continue;
     }
-    if (plan.kind === 'http') {
-      routes.servers[plan.channelName || item.name] = {
-        ...(routes.servers[plan.channelName || item.name] ?? {}),
-        upstream: plan.original.url,
-        ...(enforce ? { posture: enforce } : {}),
-      };
-      routesChanged = true;
-    }
     results.push({ host: item.hostId, name: item.name, ok: true, kind: plan.kind, applied: true, backup: res.backup });
   }
 
-  if (write && routesChanged) saveRoutes(defaultRoutesPath(), routes);
   return results;
 }

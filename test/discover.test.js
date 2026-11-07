@@ -9,9 +9,15 @@ import {
 } from '../src/discover.js';
 
 test('isProtectedServer detects a wrapped stdio server', () => {
-  assert.equal(isProtectedServer({ kind: 'stdio', command: 'node', args: ['.../src/cli.js', 'wrap', '--', 'uvx', 'blender-mcp'] }), true);
-  assert.equal(isProtectedServer({ kind: 'stdio', command: 'C:\\...\\dist\\tripwire.exe', args: ['wrap'] }), true);
+  const wrapped = ['wrap', '--name', 'codex::blender', '--', 'uvx', 'blender-mcp'];
+  assert.equal(isProtectedServer({ kind: 'stdio', command: 'node', args: ['C:/app/src/cli.js', ...wrapped] }), true);
+  assert.equal(isProtectedServer({ kind: 'stdio', command: 'C:\\...\\dist\\tripwire.exe', args: wrapped }), true);
   assert.equal(isProtectedServer({ kind: 'stdio', command: 'uvx', args: ['blender-mcp'] }), false);
+  // A binary merely named tripwire, or a script path that happens to contain
+  // the word, is not a wrapper.
+  assert.equal(isProtectedServer({ kind: 'stdio', command: 'C:\\evil\\tripwire.exe', args: ['serve'] }), false);
+  assert.equal(isProtectedServer({ kind: 'stdio', command: 'node', args: ['C:/tools/tripwire-helper/server.js'] }), false);
+  assert.equal(isProtectedServer({ kind: 'stdio', command: 'node', args: ['src/cli.js', 'wrap'] }), false);
 });
 
 test('isProtectedServer detects a routed http server', () => {
@@ -67,7 +73,7 @@ test('unprotectedServers lists only the ones not routed through us', () => {
   const snap = snapshotServers(enumerate);
   assert.equal(unprotectedServers(snap).length, 2);
   const wrapped = snapshotServers(() => ([
-    { hostId: 'codex', name: 'a', info: { kind: 'stdio', command: 'node', args: ['src/cli.js', 'wrap'] } },
+    { hostId: 'codex', name: 'a', info: { kind: 'stdio', command: 'node', args: ['src/cli.js', 'wrap', '--name', 'codex::a', '--', 'uvx', 'a'] } },
   ]));
   assert.equal(unprotectedServers(wrapped).length, 0);
 });
@@ -87,5 +93,6 @@ test('a missing registry reads as null (never seeded), and round-trips once save
     assert.deepEqual(Object.keys(loadKnown(path)).sort(), [serverKey('codex', 'node_repl'), serverKey('codex', 'remote')].sort());
   } finally {
     rmSync(path, { force: true });
+    rmSync(path + '.key', { force: true });
   }
 });
