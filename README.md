@@ -8,7 +8,7 @@
 
 **Windows 桌面应用 · 在 Agent 与 MCP 之间加一道可检查的绊线**
 
-[官方仓库](https://github.com/luke0485/mcp-safetripwire) · [下载安装程序](https://github.com/luke0485/mcp-safetripwire/releases/latest/download/MCP-SafeTripwire-Setup.exe) · [便携版 ZIP](https://github.com/luke0485/mcp-safetripwire/releases/latest/download/MCP-SafeTripwire-windows-x64.zip)
+[下载安装程序](https://github.com/luke0485/mcp-safetripwire/releases/latest/download/MCP-SafeTripwire-Setup.exe) · [便携版 ZIP](https://github.com/luke0485/mcp-safetripwire/releases/latest/download/MCP-SafeTripwire-windows-x64.zip)
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-252525)
 ![License](https://img.shields.io/badge/License-MIT-555555)
@@ -44,7 +44,7 @@ SafeTripwire 是一个 Windows 本地安全代理。它把 Agent 的 MCP 连接�
 | 桌面体验 | WinForms + WebView2 原生窗口；无地址栏；关闭面板后托盘后台运行 |
 | 设置 | 右上角齿轮；语言、浅色/深色/跟随系统；设置页左上角返回 |
 
-Agent 目录包含 **58 个条目**（含 DeepSeek Harness 等厂商条目）和 **30 个配置适配器**；自动发现、手动指定配置和 URL 接入是三种不同层级。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
+Agent 目录包含 **58 个条目**和 **30 个配置适配器**；自动发现、手动指定配置和 URL 接入是三种不同层级。详见 [Agent 覆盖说明](docs/AGENT-COVERAGE.md)。
 
 ## 安装与接入
 
@@ -78,7 +78,6 @@ Agent 目录包含 **58 个条目**（含 DeepSeek Harness 等厂商条目）和
 - 构建：主程序、WebView2 面板、便携 ZIP、安装程序
 - 脚本检查：JS 语法 + PowerShell 解析通过
 
-离线实验室包用于专用测试机，不在日常办公机运行；它不是对真实环境的攻击测试。
 
 ## 下载文件
 
@@ -107,10 +106,14 @@ node src/cli.js console
 
 ## English
 
-MCP SafeTripwire is a Windows-first, LLM-free security broker for MCP traffic explicitly routed through it: manifest fingerprints, static checks, tool/domain blacklists, frozen behaviour baselines, hash-chained audit logs and two operating modes (Observe / Protect). It ships as a local installer with a native WebView2 panel and tray process. It does not protect traffic that never passes through it, and it is not a global firewall.
+MCP SafeTripwire is a Windows-first, LLM-free security broker for Model Context Protocol traffic that is explicitly routed through it. It sits between an Agent and its MCP server, keeps a reviewed fingerprint of the tool surface, scans tool metadata and call arguments, applies tool and domain blocklists plus frozen behaviour baselines, and writes a hash-chained local audit log. Two modes keep rollout predictable: Observe records and notifies without blocking; Protect enforces the configured rules for enrolled channels. The application installs per user, runs as a native WebView2 panel with a tray process, keeps local relay addresses on `127.0.0.1`, and does not intercept traffic that never passes through it. It is not a global firewall, does not protect cloud-only or unconfigured Agents, and is not a substitute for host hardening or endpoint security.
 
-## 作者与许可证
+## 作者与协作 / Credits
 
-作者：**luke0485** · [GitHub](https://github.com/luke0485)
+**作者 / Author：luke0485**
 
-项目代码采用 [MIT License](LICENSE)。第三方 Agent 名称、商标和图标属于各自权利人；图标来源见 [assets/README.md](assets/README.md)。
+**AI 协作模型 / AI collaborators：DeepSeek V4.1 Flash、GPT6.1sol**
+
+## 许可证
+
+项目代码采用 [MIT License](LICENSE)。第三方 Agent 名称、商标和图标属于各自权利人，不因本项目的 MIT 许可证转授其商标权；图标来源见 [assets/README.md](assets/README.md)。
